@@ -3,6 +3,17 @@
 All notable changes to the Palafrugell ↔ Cheltenham Spa journey planner.
 Versions are also shown in-app (header badge + footer "Version history").
 
+## [2.2] — 2026-08-11
+- Added a **data-source registry**: every static timetable (Airport Flyer,
+  Moventis buses, flight seasons, UK rail, FX) is stored with the validity/expiry
+  dates printed on it and its source link.
+- New **Admin panel** flags each source as OK / expiring-soon (≤30 days) /
+  expired, with a summary of how many need attention. It currently flags the
+  off-season Moventis Girona & Barcelona bus sheets as expired (they ran to
+  30 Jun 2026), so the current summer timetables need pulling.
+- The weekly task now checks expiry first and re-pulls anything expired or due,
+  updating each source's validTo to the new sheet's printed dates.
+
 ## [2.1] — 2026-08-11
 - Flight links now open the live booking site **pre-filled with your date and
   route** on the primary button (Ryanair natively; Skyscanner-by-date for

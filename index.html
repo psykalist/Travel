@@ -129,6 +129,25 @@ footer { margin-top:26px; font-size:11.5px; color:#8a93a0; border-top:1px solid 
 .bt { background:#eef4ff; border:1px solid #d3e0f7; border-radius:6px; padding:2px 7px; font-size:12px; font-variant-numeric:tabular-nums; }
 .btnote { font-size:11.5px; color:#b26a00; margin:5px 0; }
 .btsrc { font-size:12px; color:#1a53d0; text-decoration:none; font-weight:600; }
+/* admin */
+.adwrap { background:#fff; border:1px solid #e4e7ec; border-radius:14px; padding:4px 16px; margin:18px 0; box-shadow:0 2px 10px rgba(0,0,0,.03); }
+.adwrap summary { cursor:pointer; font-weight:700; font-size:14px; color:#334; padding:10px 0; }
+.ad-flag { background:#fdecec; color:#c62828; border-radius:20px; padding:2px 10px; font-size:11.5px; margin-left:6px; }
+.ad-ok { background:#e3f5ea; color:#0d7a4f; border-radius:20px; padding:2px 10px; font-size:11.5px; margin-left:6px; }
+.ad-help { font-size:12px; color:#667; margin:2px 0 12px; }
+.adtable { width:100%; border-collapse:collapse; font-size:12.5px; }
+.adtable th { text-align:left; color:#8a93a0; font-size:11px; text-transform:uppercase; letter-spacing:.4px; padding:6px 8px; border-bottom:1px solid #eef1f6; }
+.adtable td { padding:8px; border-bottom:1px solid #f2f4f8; vertical-align:top; }
+.ad-lab { font-weight:600; }
+.ad-unc { background:#fbf4e6; color:#8a6d2f; border-radius:5px; padding:0 6px; font-size:10.5px; font-weight:700; }
+.ad-badge { border-radius:6px; padding:1px 8px; font-size:11px; font-weight:700; white-space:nowrap; }
+.ad-badge.ok { background:#e3f5ea; color:#0d7a4f; }
+.ad-badge.soon { background:#fbf1dd; color:#b26a00; }
+.ad-badge.expired { background:#fbe3e3; color:#c62828; }
+.ad-dates { color:#455; white-space:nowrap; }
+.ad-note { color:#667; }
+.adtable a { color:#1a53d0; text-decoration:none; font-weight:600; white-space:nowrap; }
+tr.ad-expired td { background:#fef7f7; }
 </style>
 </head>
 <body>
@@ -208,6 +227,7 @@ footer { margin-top:26px; font-size:11.5px; color:#8a93a0; border-top:1px solid 
   </section>
 
   <div id="bustimes"></div>
+  <div id="admin"></div>
   <footer id="foot"></footer>
 </div>
 
@@ -295,6 +315,26 @@ const DATA = {
       src: "https://www.moventis.es/ca/linies-horaris"
     }
   },
+
+  // DATA SOURCE REGISTRY — validity/expiry of each static timetable (drives the Admin panel).
+  // validTo = last day the printed timetable is valid (YYYY-MM-DD), or null for ongoing/frequency services.
+  sources: [
+    {id:"flyer",   label:"Bristol Airport Flyer (A1)", validFrom:null, validTo:null,
+      src:"https://flyer.bristolairport.co.uk/timetables", note:"24/7 turn-up-and-go frequency — no seasonal expiry"},
+    {id:"bus_gro", label:"Moventis E3 · Palafrugell ⇄ Girona", validFrom:"2025-09-01", validTo:"2026-06-30",
+      src:"https://www.moventis.es/sites/moventis/files/line/files/e3_girona-costa_brava_setembre_2025_-_juny_2026_0.pdf",
+      note:"Off-season (Sep–Jun) sheet; summer timetable is separate"},
+    {id:"bus_bcn", label:"Moventis line 1 · Palafrugell ⇄ Barcelona airport", validFrom:null, validTo:"2026-06-30",
+      src:"https://www.moventis.es/ca/linies-horaris", note:"Seasonal; current-season PDF to be confirmed", unconfirmed:true},
+    {id:"fl_gro",  label:"Ryanair Girona ↔ Bristol / Birmingham (summer)", validFrom:"2026-04-04", validTo:"2026-10-24",
+      src:"https://corporate.ryanair.com/news/ryanair-launches-summer-2026-schedule-at-bristol/", note:"Summer-only season"},
+    {id:"fl_bcn",  label:"Barcelona ↔ Bristol / Birmingham flights", validFrom:null, validTo:"2026-10-24",
+      src:"https://www.skyscanner.net", note:"Airline summer season; winter schedule from late Oct"},
+    {id:"trains",  label:"UK rail · Bristol/Birmingham ↔ Cheltenham", validFrom:null, validTo:"2026-12-13",
+      src:"https://www.nationalrail.co.uk", note:"UK national timetable change (~May & Dec)"},
+    {id:"fx",      label:"EUR → GBP exchange rate", validFrom:null, validTo:null,
+      src:"", note:"Drifts continuously; refreshed weekly"}
+  ],
 
   // numeric fares (one-way, per adult) for the cost estimator
   fareNum: {
@@ -684,9 +724,41 @@ function renderBusTimes(){
   </details>`;
 }
 
+// ---- admin: data-source expiry tracker ----
+function srcStatus(s){
+  if(!s.validTo) return {k:'ok', t:s.unconfirmed?'ongoing · confirm':'ongoing'};
+  const today=new Date(); today.setHours(0,0,0,0);
+  const exp=new Date(s.validTo+'T00:00:00');
+  const days=Math.round((exp-today)/86400000);
+  if(days<0) return {k:'expired', t:`expired ${-days}d ago — refresh`};
+  if(days<=30) return {k:'soon', t:`expires in ${days}d (${s.validTo})`};
+  return {k:'ok', t:`valid to ${s.validTo}`};
+}
+function renderAdmin(){
+  const host=document.getElementById('admin'); if(!host) return;
+  const rows=DATA.sources.map(s=>{
+    const st=srcStatus(s);
+    const dates = s.validTo ? ((s.validFrom?s.validFrom+' → ':'')+s.validTo) : (s.validFrom?('from '+s.validFrom):'ongoing');
+    const link = s.src ? `<a href="${s.src}" target="_blank" rel="noopener">source ↗</a>` : '';
+    return `<tr class="ad-${st.k}">
+      <td class="ad-lab">${s.label}${s.unconfirmed?' <span class="ad-unc">unconfirmed</span>':''}</td>
+      <td><span class="ad-badge ${st.k}">${st.k==='expired'?'⚠ expired':st.k==='soon'?'● soon':'✓ ok'}</span></td>
+      <td class="ad-dates">${st.t}</td>
+      <td class="ad-note">${s.note||''}</td>
+      <td>${link}</td></tr>`;
+  }).join('');
+  const need=DATA.sources.filter(s=>{const k=srcStatus(s).k;return k==='expired'||k==='soon';}).length;
+  const summary = need ? `<span class="ad-flag">${need} source${need>1?'s':''} need attention</span>` : `<span class="ad-ok">all sources current</span>`;
+  host.innerHTML = `<details class="adwrap"><summary>🛠 Admin — data sources &amp; expiry ${summary}</summary>
+    <p class="ad-help">Each static timetable is stored with the validity dates printed on it. The weekly task re-checks these and re-pulls anything expired or expiring. Colours: <b style="color:#0d7a4f">ok</b> · <b style="color:#b26a00">expiring &le;30d</b> · <b style="color:#c62828">expired</b>.</p>
+    <table class="adtable"><thead><tr><th>Timetable / data</th><th>Status</th><th>Validity</th><th>Notes</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+  </details>`;
+}
+
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "2.1";
+const VERSION = "2.2";
 const CHANGELOG = [
+  ["2.2","2026-08-11","Added a data-source registry with each static timetable's printed validity/expiry, and an Admin panel that flags OK / expiring-soon / expired so the weekly script knows what to re-pull. (Immediately flags the off-season Girona/Barcelona bus sheets as expired — summer timetables need pulling.)"],
   ["2.1","2026-08-11","Flight links now open the live site pre-filled with your date & route on the primary button (Ryanair native, Skyscanner-by-date for easyJet/Jet2/Vueling), with a direct-to-airline link alongside. Trains/buses can't be date-linked (rail sites use non-public station IDs; Moventis serves static PDFs)."],
   ["2.0","2026-08-11","Pulled the real Moventis bus timetables (Palafrugell ⇄ Girona line E3, and Palafrugell ⇄ Barcelona airport line 1) into a collapsible panel with source links; off-season Mon–Fri, refreshed with the flights. Warmer coloured theme with a gradient background and hero header."],
   ["1.9","2026-08-11","Usability pack: per-flight door-to-door arrival time in Cheltenham/Palafrugell with a green/amber/red last-connection check; door-to-door journey time on each routing; sort options by cheapest/fastest/earliest arrival; remembers your settings and supports shareable URLs; sticky date bar and bigger tap targets on mobile."],
@@ -735,6 +807,7 @@ function render(){
     ['cost-'+side,'scan-'+side,'legs-'+side].forEach(id=>{ const e=document.getElementById(id); if(e) e.style.display=f?'':'none'; });
   });
   renderBusTimes();
+  renderAdmin();
   document.getElementById('ver').textContent = VERSION;
   const clog = CHANGELOG.map(c=>`<li><b>v${c[0]}</b> <span style="color:#aab">${c[1]}</span> — ${c[2]}</li>`).join('');
   document.getElementById('foot').innerHTML =
