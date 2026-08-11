@@ -7,8 +7,11 @@
 <style>
 :root { color-scheme: light; }
 * { box-sizing: border-box; }
-body { margin:0; background:#f7f8fa; color:#1c1e21; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; line-height:1.45; font-size:15px; }
+body { margin:0; background:linear-gradient(165deg,#e9f0fc 0%, #eef3fb 35%, #f5efe4 100%); background-attachment:fixed; color:#1c1e21; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; line-height:1.45; font-size:15px; }
 .wrap { max-width:1080px; margin:0 auto; padding:20px 18px 60px; }
+.hero { background:linear-gradient(120deg,#1a53d0,#0d7a4f); color:#fff; border-radius:16px; padding:16px 20px; margin-bottom:16px; box-shadow:0 4px 16px rgba(26,83,208,.18); }
+.hero .sub { color:rgba(255,255,255,.9); margin:4px 0 0; }
+.hero .stamp { background:rgba(255,255,255,.18); color:#fff; }
 h1 { font-size:22px; margin:0 0 2px; letter-spacing:-0.2px; }
 .sub { color:#5b6470; font-size:13.5px; margin:0 0 14px; }
 .stamp { background:#eef1f6; border-radius:20px; padding:4px 12px; font-size:12.5px; color:#667; display:inline-block; margin-bottom:14px; }
@@ -115,14 +118,29 @@ h1 { font-size:22px; margin:0 0 2px; letter-spacing:-0.2px; }
 .buffer.warn { background:#fdecec; border-color:#f3bcbc; color:#8f2020; }
 .note { font-size:12.5px; color:#5b6470; background:#eef4ff; border:1px solid #d3e0f7; border-radius:10px; padding:10px 13px; margin:6px 0 16px; }
 footer { margin-top:26px; font-size:11.5px; color:#8a93a0; border-top:1px solid #e4e7ec; padding-top:14px; }
+/* bus timetables */
+.btwrap { background:#fff; border:1px solid #e4e7ec; border-radius:14px; padding:4px 16px; margin:18px 0; box-shadow:0 2px 10px rgba(0,0,0,.03); }
+.btwrap summary { cursor:pointer; font-weight:700; font-size:14px; color:#1a53d0; padding:10px 0; }
+.btseason { font-size:12px; color:#8a6d2f; background:#fbf4e6; border:1px solid #f0e2c2; border-radius:8px; padding:7px 11px; margin:4px 0 14px; }
+.btblock { margin-bottom:16px; }
+.btlabel { font-size:12.8px; color:#455; margin-bottom:7px; }
+.btrow { display:flex; flex-wrap:wrap; gap:5px; align-items:center; margin-bottom:6px; }
+.btdir { font-size:11.5px; font-weight:700; color:#8a93a0; min-width:96px; }
+.bt { background:#eef4ff; border:1px solid #d3e0f7; border-radius:6px; padding:2px 7px; font-size:12px; font-variant-numeric:tabular-nums; }
+.btnote { font-size:11.5px; color:#b26a00; margin:5px 0; }
+.btsrc { font-size:12px; color:#1a53d0; text-decoration:none; font-weight:600; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Palafrugell &harr; Cheltenham Spa &mdash; Journey Planner</h1>
-  <p class="sub">Every leg, both directions, all four airport routings, with an indicative cost per trip. Timetables &amp; fares refresh weekly in the background; flight prices link out live.</p>
-  <span class="stamp">Timetables &amp; fares last refreshed: <b id="stamp">&mdash;</b></span>
-  <span class="stamp">Version <b id="ver">&mdash;</b></span>
+  <div class="hero">
+    <h1>Palafrugell &harr; Cheltenham Spa &mdash; Journey Planner</h1>
+    <p class="sub">Every leg, both directions, all four airport routings, with an indicative cost per trip. Timetables &amp; fares refresh weekly in the background; flight prices link out live.</p>
+    <div style="margin-top:8px">
+      <span class="stamp">Timetables &amp; fares last refreshed: <b id="stamp">&mdash;</b></span>
+      <span class="stamp">Version <b id="ver">&mdash;</b></span>
+    </div>
+  </div>
 
   <div class="prefs">
     <h2>Trip window &amp; preferences</h2>
@@ -189,6 +207,7 @@ footer { margin-top:26px; font-size:11.5px; color:#8a93a0; border-top:1px solid 
     <div class="legs" id="legs-home"></div>
   </section>
 
+  <div id="bustimes"></div>
   <footer id="foot"></footer>
 </div>
 
@@ -256,6 +275,24 @@ const DATA = {
         {carrier:"easyJet", no:"", days:[0,1,2,3,4,5,6], dep:"", arr:"", season:"Year-round", approx:true, note:""},
         {carrier:"Ryanair", no:"", days:[0,1,2,3,4,5,6], dep:"", arr:"", season:"Year-round", approx:true, note:""}
       ]
+    }
+  },
+
+  // BUS TIMETABLES (static, change after holiday season — refreshed with the flights)
+  busTimes: {
+    season: "Off-season, Mon–Fri (1 Sep 2025 – 30 Jun 2026). Weekends & summer differ.",
+    gro: {
+      label: "Palafrugell ⇄ Girona city bus station · line E3 via Palamós/Platja d'Aro (~1h40). For the airport, connect in Girona (Sagalés/taxi).",
+      toDest: ["06:15","06:30","07:15","07:30","08:20","12:20","13:00","13:30","14:00","14:45","16:20","17:40","18:00","18:15","18:40","19:20","20:20"],
+      toPal:  ["08:00","08:15","09:00","09:15","10:00","11:00","14:00","14:45","15:15","15:45","16:15","18:00","19:15","19:45","20:00","20:15","21:00","22:00"],
+      src: "https://www.moventis.es/sites/moventis/files/line/files/e3_girona-costa_brava_setembre_2025_-_juny_2026_0.pdf"
+    },
+    bcn: {
+      label: "Palafrugell ⇄ Barcelona Airport (T2/T1) · line 1 direct coach (~2h45). Airport-bound services shown.",
+      toDest: ["06:15","09:35","10:35","13:30","15:30"],
+      toPal:  ["08:30","10:30","16:15","19:30","20:15"],
+      note: "Off-season sample — summer adds an early 04:15 and later services to ~23:00/23:25. Confirm exact times on the official timetable.",
+      src: "https://www.moventis.es/ca/linies-horaris"
     }
   },
 
@@ -620,9 +657,29 @@ function buf(html,cls){ return {html,cls:cls||''}; }
 // ============================================================================
 // RENDER
 // ============================================================================
+// ---- bus timetables panel ----
+function renderBusTimes(){
+  const host=document.getElementById('bustimes'); if(!host) return;
+  const B=DATA.busTimes;
+  const chips=a=>a.map(t=>`<span class="bt">${t}</span>`).join('');
+  function block(x, destName){
+    return `<div class="btblock"><div class="btlabel">${x.label}</div>
+      <div class="btrow"><span class="btdir">→ ${destName}</span>${chips(x.toDest)}</div>
+      <div class="btrow"><span class="btdir">→ Palafrugell</span>${chips(x.toPal)}</div>
+      ${x.note?`<div class="btnote">${x.note}</div>`:''}
+      <a class="btsrc" href="${x.src}" target="_blank" rel="noopener">official timetable ↗</a></div>`;
+  }
+  host.innerHTML = `<details class="btwrap"><summary>🚌 Bus timetables — Palafrugell ⇄ Girona / Barcelona airport</summary>
+    <div class="btseason">${B.season}</div>
+    ${block(B.gro,'Girona')}
+    ${block(B.bcn,'Barcelona Airport')}
+  </details>`;
+}
+
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "1.9";
+const VERSION = "2.0";
 const CHANGELOG = [
+  ["2.0","2026-08-11","Pulled the real Moventis bus timetables (Palafrugell ⇄ Girona line E3, and Palafrugell ⇄ Barcelona airport line 1) into a collapsible panel with source links; off-season Mon–Fri, refreshed with the flights. Warmer coloured theme with a gradient background and hero header."],
   ["1.9","2026-08-11","Usability pack: per-flight door-to-door arrival time in Cheltenham/Palafrugell with a green/amber/red last-connection check; door-to-door journey time on each routing; sort options by cheapest/fastest/earliest arrival; remembers your settings and supports shareable URLs; sticky date bar and bigger tap targets on mobile."],
   ["1.8","2026-08-11","Progressive disclosure: selecting a routing hides the others and shows only that route's flights, transfers and cost, with a 'Compare all four' back button. The cheapest routing (on typical fares) is highlighted green as a good-value option."],
   ["1.7","2026-08-11","Added a compare-all overview at the top of each direction: for your chosen date it shows all four routings at once — carriers, times, daytime fit and indicative cost — so you can compare without opening each. Tap a card to drill into full legs."],
@@ -668,6 +725,7 @@ function render(){
     document.getElementById('pick-'+side).style.display='none';
     ['cost-'+side,'scan-'+side,'legs-'+side].forEach(id=>{ const e=document.getElementById(id); if(e) e.style.display=f?'':'none'; });
   });
+  renderBusTimes();
   document.getElementById('ver').textContent = VERSION;
   const clog = CHANGELOG.map(c=>`<li><b>v${c[0]}</b> <span style="color:#aab">${c[1]}</span> — ${c[2]}</li>`).join('');
   document.getElementById('foot').innerHTML =

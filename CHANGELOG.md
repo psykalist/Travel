@@ -3,6 +3,15 @@
 All notable changes to the Palafrugell ↔ Cheltenham Spa journey planner.
 Versions are also shown in-app (header badge + footer "Version history").
 
+## [2.0] — 2026-08-11
+- Pulled the real **Moventis bus timetables** from the official sources:
+  Palafrugell ⇄ Girona (line E3, ~1h40) and Palafrugell ⇄ Barcelona Airport
+  (line 1, ~2h45), shown in a collapsible panel with the departure times each
+  direction and links to the official timetables. Off-season Mon–Fri; the
+  weekly task refreshes them alongside the flights.
+- **Colour:** warmer theme with a soft gradient background and a coloured hero
+  header, instead of plain white.
+
 ## [1.9] — 2026-08-11
 - **Arrival time & connection safety.** Each flight now shows the door-to-door
   arrival time in Cheltenham (or Palafrugell homebound) and a green/amber/red
