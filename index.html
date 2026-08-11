@@ -48,8 +48,12 @@ h1 { font-size:22px; margin:0 0 2px; letter-spacing:-0.2px; }
 .scangrid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
 .scancol h4 { font-size:12px; text-transform:uppercase; letter-spacing:.5px; color:#8a93a0; margin:0 0 6px; }
 .dlist { display:flex; flex-direction:column; gap:5px; }
-.drow { display:flex; align-items:center; justify-content:space-between; gap:8px; background:#f4f6f9; border-radius:8px; padding:5px 10px; font-size:13px; }
-.drow .d { font-weight:600; }
+.drow { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:4px 8px; background:#f4f6f9; border-radius:8px; padding:6px 10px; font-size:13px; }
+.drow.muted { opacity:.5; }
+.drow .d { font-weight:600; min-width:96px; }
+.drow .svc { flex:1 1 200px; font-size:12.5px; color:#333; }
+.drow .noflight { font-size:12px; color:#98a; }
+.drow .svcnote { color:#8a93a0; font-size:11.5px; }
 .drow a { text-decoration:none; color:#1a53d0; font-weight:600; font-size:12.5px; }
 @media(max-width:640px){ .scangrid{ grid-template-columns:1fr; } }
 
@@ -80,6 +84,7 @@ footer { margin-top:26px; font-size:11.5px; color:#8a93a0; border-top:1px solid 
   <h1>Palafrugell &harr; Cheltenham Spa &mdash; Journey Planner</h1>
   <p class="sub">Every leg, both directions, all four airport routings, with an indicative cost per trip. Timetables &amp; fares refresh weekly in the background; flight prices link out live.</p>
   <span class="stamp">Timetables &amp; fares last refreshed: <b id="stamp">&mdash;</b></span>
+  <span class="stamp">Version <b id="ver">&mdash;</b></span>
 
   <div class="prefs">
     <h2>Trip window &amp; preferences</h2>
@@ -169,6 +174,27 @@ const DATA = {
     train: { op:"CrossCountry", freq:"~Every 30 min", dur:"38–48 min", last:"~22:12", fare:"£6–16" }
   },
 
+  // FLIGHT SCHEDULES — days (0=Sun..6=Sat) + times. su = Spain→UK (outbound), us = UK→Spain (home).
+  // approx:true means the time shifts by day/season — treat as a guide, confirm on booking. Days are more reliable.
+  sched: {
+    gro_brs: {
+      su: [{carrier:"Ryanair", no:"FR9335", days:[0,2,5,6], dep:"15:35", arr:"16:45", season:"Apr–Oct", approx:true, note:"some days a morning ~09:40 rotation instead"}],
+      us: [{carrier:"Ryanair", no:"FR9336", days:[0,2,5,6], dep:"15:15", arr:"18:05", season:"Apr–Oct", approx:true, note:"~13:15 on morning-rotation days"}]
+    },
+    gro_bhx: {
+      su: [{carrier:"Ryanair", no:"FR4415", days:[1,4,6], dep:"17:50", arr:"18:55", season:"Seasonal — check", approx:true, note:"days/time vary — confirm on the app"}],
+      us: [{carrier:"Ryanair", no:"FR4416", days:[1,4,6], dep:"14:15", arr:"17:10", season:"Seasonal — check", approx:true, note:"days/time vary — confirm on the app"}]
+    },
+    bcn_brs: {
+      su: [{carrier:"easyJet / Ryanair", no:"", days:[0,1,2,3,4,5,6], dep:"10:50", arr:"12:15", season:"Year-round", approx:true, note:"several daily, roughly 06:00–22:00 — pick your time on the link"}],
+      us: [{carrier:"easyJet / Ryanair", no:"", days:[0,1,2,3,4,5,6], dep:"08:20", arr:"11:35", season:"Year-round", approx:true, note:"several daily, roughly 06:00–22:00 — pick your time on the link"}]
+    },
+    bcn_bhx: {
+      su: [{carrier:"Jet2", no:"LS1338", days:[0,1,2,3,4,5,6], dep:"11:30", arr:"13:00", season:"Year-round", approx:false, note:"Jet2 daily; Ryanair/easyJet/Vueling add other times"}],
+      us: [{carrier:"Jet2", no:"LS1337", days:[0,1,2,3,4,5,6], dep:"07:30", arr:"10:45", season:"Year-round", approx:false, note:"Jet2 daily; other carriers add later times"}]
+    }
+  },
+
   // numeric fares (one-way, per adult) for the cost estimator
   fareNum: {
     bus_pgl_gro:  { cur:"EUR", low:8,  high:12 },
@@ -196,6 +222,10 @@ const COMPOSE = {
   brs_bcn: ["bus_pgl_bcn","fl_bcn_brs",["flyer","train_bristol"]],
   bhx_bcn: ["bus_pgl_bcn","fl_bcn_bhx",["shuttle_bham","train_bham"]]
 };
+// routing key -> flight-schedule key (homebound keys share their pair's schedule)
+const SCHEDKEY = { gro_brs:'gro_brs',gro_bhx:'gro_bhx',bcn_brs:'bcn_brs',bcn_bhx:'bcn_bhx',
+                   brs_gro:'gro_brs',bhx_gro:'gro_bhx',brs_bcn:'bcn_brs',bhx_bcn:'bcn_bhx' };
+const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
 // ---- links ----
 function ryanair(o,d,date){ return `https://www.ryanair.com/gb/en/trip/flights/select?adults=1&teenagers=0&children=0&infants=0&dateOut=${date}&originIata=${o}&destinationIata=${d}&isConnectedFlight=false&isReturn=false`; }
@@ -227,6 +257,9 @@ function dateIdsFor(side){
   if(triptype()==='oneway') return ['outFrom','outTo'];
   return side==='home' ? ['retFrom','retTo'] : ['outFrom','outTo'];
 }
+// local YYYY-MM-DD (avoids the UTC shift toISOString causes in +ve timezones)
+function ymd(dd){ return dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0')+'-'+String(dd.getDate()).padStart(2,'0'); }
+function tomorrowStr(){ const t=new Date(); t.setDate(t.getDate()+1); return ymd(t); }
 // list of dates (YYYY-MM-DD), capped. Single-date mode ignores the "to" field.
 function dateRange(fromId,toId){
   const a=document.getElementById(fromId).value;
@@ -234,11 +267,11 @@ function dateRange(fromId,toId){
   const b = datemode()==='single' ? a : (document.getElementById(toId).value || a);
   const start=new Date(a+"T00:00:00"); const end=new Date(b+"T00:00:00");
   const out=[]; let d=new Date(start), n=0;
-  while(d<=end && n<21){ out.push(d.toISOString().slice(0,10)); d=new Date(d.getTime()+86400000); n++; }
+  while(d<=end && n<40){ out.push(ymd(d)); d.setDate(d.getDate()+1); n++; }
   return out;
 }
 function datesForSide(side){ const ids=dateIdsFor(side); return dateRange(ids[0],ids[1]); }
-function firstDateFor(side){ const ds=datesForSide(side); return ds[0] || new Date(Date.now()+86400000).toISOString().slice(0,10); }
+function firstDateFor(side){ const ds=datesForSide(side); return ds[0] || tomorrowStr(); }
 function niceDate(s){ return new Date(s+"T00:00:00").toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}); }
 
 // ---- cost estimate (indicative return, per traveller) ----
@@ -274,22 +307,43 @@ function renderCost(hostId, routeKey){
 
 // ---- fare scan: per-date flight price links across your window ----
 function renderScan(hostId, routeKey, side){
-  const [o,d] = IATA[routeKey];            // flight direction for this tab
+  const [o,d] = IATA[routeKey];                 // flight direction for this tab
   const dates = datesForSide(side);
+  const dir = side==='out' ? 'su' : 'us';       // Spain→UK vs UK→Spain
+  const svcs = (DATA.sched[SCHEDKEY[routeKey]] || {})[dir] || [];
   const host=document.getElementById(hostId);
   const single = datemode()==='single';
-  let inner;
+  let rows;
   if(!dates.length){
-    inner = `<div class="hint" style="margin:0">Set the ${single?'date':'dates'} above.</div>`;
+    rows = `<div class="hint" style="margin:0">Set the ${single?'date':'dates'} above.</div>`;
   } else {
-    inner = `<div class="dlist">`+dates.map(dt=>`<div class="drow"><span class="d">${niceDate(dt)}</span>
-      <span><a href="${sky(o,d,dt)}" target="_blank" rel="noopener">All fares ↗</a> &nbsp;
-      <a href="${ryanair(o,d,dt)}" target="_blank" rel="noopener">Ryanair ↗</a></span></div>`).join('')+`</div>`;
+    let any=false; const parts=[];
+    dates.forEach(dt=>{
+      const dow = new Date(dt+"T00:00:00").getDay();
+      const flying = svcs.filter(s=>s.days.includes(dow));
+      if(!flying.length){
+        parts.push(`<div class="drow muted"><span class="d">${niceDate(dt)}</span><span class="noflight">no ${o}→${d} flight this day</span></div>`);
+      } else {
+        flying.forEach(s=>{
+          any=true;
+          const fit = inWindow(s.dep);
+          const tag = fit===null ? '' : (fit ? '<span class="badge day">✓ daytime</span>' : '<span class="badge off">⚠ early/late</span>');
+          const star = s.approx ? '*' : '';
+          const priceHref = s.carrier==='Ryanair' ? ryanair(o,d,dt) : sky(o,d,dt);
+          const note = s.note ? `<span class="svcnote"> — ${s.note}</span>` : '';
+          parts.push(`<div class="drow"><span class="d">${niceDate(dt)}</span>
+            <span class="svc">${s.carrier}${s.no?' '+s.no:''} · ${s.dep}${star}→${s.arr}${star} ${tag}${note}</span>
+            <span><a href="${priceHref}" target="_blank" rel="noopener">price ↗</a> · <a href="${sky(o,d,dt)}" target="_blank" rel="noopener">all ↗</a></span></div>`);
+        });
+      }
+    });
+    rows = `<div class="dlist">${parts.join('')}</div>` + (any?'':`<p class="hint" style="margin:8px 0 0">No flights on this route across those dates — widen the range or try another routing.</p>`);
   }
+  const season = svcs[0] ? svcs[0].season : '';
   host.innerHTML = `<div class="scan">
-    <h3>Fare ${single?'check':'scan'} — ${o} → ${d}</h3>
-    <p class="hint">Each day links to live prices (all airlines via Skyscanner, plus Ryanair). Pick the cheapest day that also has a daytime departure.</p>
-    ${inner}</div>`;
+    <h3>Flight options — ${o} → ${d}</h3>
+    <p class="hint">Only days this route actually flies show as options${season?' · '+season:''}. <b>*</b> = approximate time (days are reliable; confirm the time when booking). Tap <b>price</b> to check that exact day.</p>
+    ${rows}</div>`;
 }
 
 // ============================================================================
@@ -373,6 +427,17 @@ function buf(html,cls){ return {html,cls:cls||''}; }
 // ============================================================================
 // RENDER
 // ============================================================================
+// ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
+const VERSION = "1.5";
+const CHANGELOG = [
+  ["1.5","2026-08-11","Tightened flight schedules (representative times + 'varies' notes); added visible version & history; weekly task now auto-refreshes schedules and both the sidebar and hosted copies."],
+  ["1.4","2026-08-11","Schedule-aware Flight options list — shows only the days each route actually flies, with times, daytime fit, and per-day price links."],
+  ["1.3","2026-08-11","Added one-way trips and single-date mode; cost estimate adjusts to one-way."],
+  ["1.2","2026-08-11","Added indicative cost estimator, date-range fare scan, traveller count, and daytime-departure preference."],
+  ["1.1","2026-08-11","Added transfer buffers with last-connection warnings on every routing."],
+  ["1.0","2026-08-11","Initial planner: both directions, four airport routings (Girona/Barcelona × Bristol/Birmingham), live operator links."]
+];
+
 const state = { dir:'out', out:'gro_brs', home:'bhx_bcn' };
 function setDir(d){ state.dir=d;
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.dir===d));
@@ -396,9 +461,13 @@ function render(){
   renderSide('home', homeboundRoutes(),'pick-home','legs-home',['brs_gro','bhx_gro','brs_bcn','bhx_bcn']);
   renderCost('cost-out', state.out); renderScan('scan-out', state.out,'out');
   renderCost('cost-home', state.home); renderScan('scan-home', state.home,'home');
+  document.getElementById('ver').textContent = VERSION;
+  const clog = CHANGELOG.map(c=>`<li><b>v${c[0]}</b> <span style="color:#aab">${c[1]}</span> — ${c[2]}</li>`).join('');
   document.getElementById('foot').innerHTML =
     "Prices &amp; live seat availability aren't scrapeable from airlines — flight buttons open live search for your dates; ground fares are indicative. "+
-    "Daytime tags use published flight times where known; always confirm the exact departure on the day. Times &amp; fares can change seasonally.";
+    "Daytime tags use published flight times where known; always confirm the exact departure on the day. Times &amp; fares can change seasonally."+
+    `<details style="margin-top:10px"><summary style="cursor:pointer;font-weight:600;color:#667">Version history — currently v${VERSION}</summary>`+
+    `<ul style="margin:8px 0 0;padding-left:18px;line-height:1.6">${clog}</ul></details>`;
 }
 function renderSide(side, routes, pickId, legsId, order){
   const pick=document.getElementById(pickId); pick.innerHTML='';
@@ -421,7 +490,7 @@ function renderSide(side, routes, pickId, legsId, order){
 
 // defaults: outbound tomorrow→+7, return +14→+21
 (function(){
-  const t=n=>new Date(Date.now()+n*86400000).toISOString().slice(0,10);
+  const t=n=>{ const x=new Date(); x.setDate(x.getDate()+n); return ymd(x); };
   document.getElementById('outFrom').value=t(1);  document.getElementById('outTo').value=t(7);
   document.getElementById('retFrom').value=t(14); document.getElementById('retTo').value=t(21);
   ['outFrom','outTo','retFrom','retTo','daypref','pax','triptype','datemode'].forEach(id=>document.getElementById(id).onchange=render);
