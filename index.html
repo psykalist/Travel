@@ -300,19 +300,20 @@ const DATA = {
 
   // BUS TIMETABLES (static, change after holiday season — refreshed with the flights)
   busTimes: {
-    season: "Off-season, Mon–Fri (1 Sep 2025 – 30 Jun 2026). Weekends & summer differ.",
+    season: "Times below are the WINTER baseline (Sep–Jun, Mon–Fri). We're currently in the SUMMER season (Jul–Aug 2026) — the current summer sheet is linked per line; exact summer departures differ.",
     gro: {
-      label: "Palafrugell ⇄ Girona city bus station · line E3 via Palamós/Platja d'Aro (~1h40). For the airport, connect in Girona (Sagalés/taxi).",
+      label: "Palafrugell ⇄ Girona city bus station · lines 5/41/42 via Palamós/Platja d'Aro (~1h40). For the airport, connect in Girona (Sagalés/taxi).",
       toDest: ["06:15","06:30","07:15","07:30","08:20","12:20","13:00","13:30","14:00","14:45","16:20","17:40","18:00","18:15","18:40","19:20","20:20"],
       toPal:  ["08:00","08:15","09:00","09:15","10:00","11:00","14:00","14:45","15:15","15:45","16:15","18:00","19:15","19:45","20:00","20:15","21:00","22:00"],
-      src: "https://www.moventis.es/sites/moventis/files/line/files/e3_girona-costa_brava_setembre_2025_-_juny_2026_0.pdf"
+      note: "Winter baseline shown — open the summer sheet for exact Jul–Aug times.",
+      src: "https://www.moventis.es/sites/moventis/files/line/files/5-41-42_girona-costa_brava_juliol-agost_2026.pdf"
     },
     bcn: {
       label: "Palafrugell ⇄ Barcelona Airport (T2/T1) · line 1 direct coach (~2h45). Airport-bound services shown.",
       toDest: ["06:15","09:35","10:35","13:30","15:30"],
       toPal:  ["08:30","10:30","16:15","19:30","20:15"],
-      note: "Off-season sample — summer adds an early 04:15 and later services to ~23:00/23:25. Confirm exact times on the official timetable.",
-      src: "https://www.moventis.es/ca/linies-horaris"
+      note: "Winter baseline sample — summer adds an early ~04:15 and later services to ~23:00/23:25. Open the line page for the exact current sheet.",
+      src: "https://www.moventis.es/es/lineas-horarios/linea-autobus-1-aeroport-bcn-barcelona-costa-brava-centre"
     }
   },
 
@@ -321,11 +322,12 @@ const DATA = {
   sources: [
     {id:"flyer",   label:"Bristol Airport Flyer (A1)", validFrom:null, validTo:null,
       src:"https://flyer.bristolairport.co.uk/timetables", note:"24/7 turn-up-and-go frequency — no seasonal expiry"},
-    {id:"bus_gro", label:"Moventis E3 · Palafrugell ⇄ Girona", validFrom:"2025-09-01", validTo:"2026-06-30",
-      src:"https://www.moventis.es/sites/moventis/files/line/files/e3_girona-costa_brava_setembre_2025_-_juny_2026_0.pdf",
-      note:"Off-season (Sep–Jun) sheet; summer timetable is separate"},
-    {id:"bus_bcn", label:"Moventis line 1 · Palafrugell ⇄ Barcelona airport", validFrom:null, validTo:"2026-06-30",
-      src:"https://www.moventis.es/ca/linies-horaris", note:"Seasonal; current-season PDF to be confirmed", unconfirmed:true},
+    {id:"bus_gro", label:"Moventis 5/41/42 · Palafrugell ⇄ Girona", validFrom:"2026-07-01", validTo:"2026-08-31",
+      src:"https://www.moventis.es/sites/moventis/files/line/files/5-41-42_girona-costa_brava_juliol-agost_2026.pdf",
+      note:"Current summer sheet (Jul–Aug 2026); winter sheet is Sep–Jun. Times below are the winter baseline — see PDF for exact summer departures", unconfirmed:true},
+    {id:"bus_bcn", label:"Moventis line 1 · Palafrugell ⇄ Barcelona airport", validFrom:"2026-06-01", validTo:"2026-08-31",
+      src:"https://www.moventis.es/es/lineas-horarios/linea-autobus-1-aeroport-bcn-barcelona-costa-brava-centre",
+      note:"Current summer season; exact departures per the line page PDF", unconfirmed:true},
     {id:"fl_gro",  label:"Ryanair Girona ↔ Bristol / Birmingham (summer)", validFrom:"2026-04-04", validTo:"2026-10-24",
       src:"https://corporate.ryanair.com/news/ryanair-launches-summer-2026-schedule-at-bristol/", note:"Summer-only season"},
     {id:"fl_bcn",  label:"Barcelona ↔ Bristol / Birmingham flights", validFrom:null, validTo:"2026-10-24",
