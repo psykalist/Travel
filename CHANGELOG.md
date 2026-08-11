@@ -3,6 +3,18 @@
 All notable changes to the Palafrugell ↔ Cheltenham Spa journey planner.
 Versions are also shown in-app (header badge + footer "Version history").
 
+## [1.9] — 2026-08-11
+- **Arrival time & connection safety.** Each flight now shows the door-to-door
+  arrival time in Cheltenham (or Palafrugell homebound) and a green/amber/red
+  flag for the last onward train/coach — e.g. a 22:10 Bristol landing shows
+  "misses last train (23:00) — plan an overnight".
+- **Total journey time** shown on every routing (door-to-door), so the cheaper
+  Barcelona routings' extra coach time is visible.
+- **Sort** the compare panel by cheapest / fastest / earliest arrival.
+- **Remembers your settings** (dates, daytime preference, travellers, sort) and
+  reflects them in the URL, so you can bookmark or share a specific search.
+- **Mobile polish:** sticky date bar on desktop and larger tap targets on phones.
+
 ## [1.8] — 2026-08-11
 - Progressive disclosure. Selecting a routing from the compare panel now hides
   the other three and shows only that route's flights, transfers (Airport Flyer

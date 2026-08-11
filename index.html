@@ -14,7 +14,17 @@ h1 { font-size:22px; margin:0 0 2px; letter-spacing:-0.2px; }
 .stamp { background:#eef1f6; border-radius:20px; padding:4px 12px; font-size:12.5px; color:#667; display:inline-block; margin-bottom:14px; }
 
 /* preferences panel */
-.prefs { background:#fff; border:1px solid #e4e7ec; border-radius:14px; padding:14px 16px; margin-bottom:18px; }
+.prefs { background:#fff; border:1px solid #e4e7ec; border-radius:14px; padding:14px 16px; margin-bottom:18px; position:sticky; top:0; z-index:30; box-shadow:0 2px 10px rgba(0,0,0,.04); }
+@media(max-width:640px){
+  .prefs { position:static; }
+  .btn { padding:9px 15px; font-size:14px; }
+  .drow { padding:8px 11px; }
+  .drow a { font-size:13px; }
+  .cmp { padding:13px 15px; }
+  .tab { padding:13px; }
+  .field input, .field select { padding:7px 9px; font-size:14px; }
+  .backbtn { padding:10px 15px; }
+}
 .prefs h2 { font-size:14px; margin:0 0 10px; text-transform:uppercase; letter-spacing:.5px; color:#8a93a0; }
 .prow { display:flex; flex-wrap:wrap; gap:16px 22px; align-items:flex-end; }
 .field { display:flex; flex-direction:column; gap:4px; }
@@ -48,8 +58,12 @@ h1 { font-size:22px; margin:0 0 2px; letter-spacing:-0.2px; }
 .cmp.muted { opacity:.55; }
 .cmp.selected { cursor:default; opacity:1; }
 .goodbadge { background:#0d7a4f; color:#fff; border-radius:6px; padding:1px 7px; font-size:10.5px; font-weight:700; vertical-align:middle; }
-.backbtn { background:#fff; border:1px solid #cfd4dc; border-radius:9px; padding:7px 12px; font:inherit; font-size:13px; font-weight:600; color:#1a53d0; cursor:pointer; }
+.backbtn { background:#fff; border:1px solid #cfd4dc; border-radius:9px; padding:8px 13px; font:inherit; font-size:13px; font-weight:600; color:#1a53d0; cursor:pointer; }
 .backbtn:hover { border-color:#1a53d0; }
+.arr { font-size:11.5px; margin-top:2px; }
+.arr.ok { color:#0d7a4f; }
+.arr.tight { color:#b26a00; }
+.arr.miss { color:#c62828; font-weight:600; }
 
 .routepick { display:flex; flex-wrap:wrap; gap:8px; margin:4px 0 16px; }
 .chip { padding:8px 14px; border-radius:20px; border:1px solid #d3d8e0; background:#fff; cursor:pointer; font-size:13.5px; font-weight:600; color:#3a4250; }
@@ -135,6 +149,14 @@ footer { margin-top:26px; font-size:11.5px; color:#8a93a0; border-top:1px solid 
           <option value="day" selected>Daytime only (08:00&ndash;20:00)</option>
           <option value="mid">Relaxed (07:00&ndash;22:00)</option>
           <option value="any">Any time</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Sort options by</label>
+        <select id="sortby">
+          <option value="cheap" selected>Cheapest</option>
+          <option value="fast">Fastest</option>
+          <option value="arrive">Earliest arrival</option>
         </select>
       </div>
       <div class="field">
@@ -326,6 +348,39 @@ function datesForSide(side){ const ids=dateIdsFor(side); return dateRange(ids[0]
 function firstDateFor(side){ const ds=datesForSide(side); return ds[0] || tomorrowStr(); }
 function niceDate(s){ return new Date(s+"T00:00:00").toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}); }
 
+// ---- journey timing (approximate) for arrival, last-connection & total time ----
+// deplane = time from landing to being on the onward service; train = onward ride to final town.
+const HOP = {
+  BRS:{deplane:45,toStation:50,wait:20,train:50,lastDep:"23:00",dest:"Cheltenham",mode:"train"},   // Flyer + Temple Meads
+  BHX:{deplane:40,toStation:27,wait:15,train:45,lastDep:"22:12",dest:"Cheltenham",mode:"train"},   // Air-Rail + New St
+  GRO:{deplane:30,toStation:5,wait:15,train:65,lastDep:"22:00",dest:"Palafrugell",mode:"coach"},
+  BCN:{deplane:45,toStation:5,wait:20,train:140,lastDep:"23:25",dest:"Palafrugell",mode:"coach"}
+};
+const BUSMIN = { bus_pgl_gro:65, bus_pgl_bcn:140 };
+const FLIGHTMIN = { gro_brs:120, gro_bhx:125, bcn_brs:120, bcn_bhx:135 };
+function toMin(s){ if(!s) return null; const p=s.split(':'); return (+p[0])*60+(+p[1]); }
+function fromMin(m){ const day=Math.floor(m/1440); const x=((m%1440)+1440)%1440;
+  return String(Math.floor(x/60)).padStart(2,'0')+':'+String(x%60).padStart(2,'0')+(day>0?' +'+day+'d':''); }
+function fmtDur(m){ return Math.floor(m/60)+'h'+String(m%60).padStart(2,'0'); }
+// arrival at final town + last-connection status for a flight landing at `arrAirport` at HH:MM
+function arrivalInfo(arrAirport, arrHHMM){
+  const h=HOP[arrAirport]; if(!h||!arrHHMM) return null;
+  const arr=toMin(arrHHMM);
+  const readyAtStation = arr + h.deplane + h.toStation;
+  const finalArr = readyAtStation + h.wait + h.train;
+  const margin = toMin(h.lastDep) - readyAtStation;
+  let status='ok', conn='';
+  if(margin < 15){ status='miss'; conn=`misses last ${h.mode} (${h.lastDep}) — plan an overnight`; }
+  else if(margin < 45){ status='tight'; conn=`tight for the last ${h.mode} (${h.lastDep})`; }
+  else if(margin < 90){ status='ok'; conn=`makes the last ${h.mode} (${h.lastDep})`; }
+  return { finalStr:fromMin(finalArr), finalMin:finalArr, dest:h.dest, status, conn };
+}
+// rough door-to-door minutes for a routing (bus + 2h check-in + flight + arrival transfers)
+function totalJourneyMins(key){
+  const [busK]=COMPOSE[key]; const d=IATA[key][1]; const h=HOP[d];
+  return (BUSMIN[busK]||90) + 120 + (FLIGHTMIN[SCHEDKEY[key]]||120) + h.deplane + h.toStation + h.wait + h.train;
+}
+
 // ---- cost estimate (indicative return, per traveller) ----
 // one-way per-leg costs in GBP
 function costFor(routeKey){
@@ -387,8 +442,10 @@ function renderScan(hostId, routeKey, side){
           const star = s.approx ? '*' : '';
           const priceHref = carrierLink(s.carrier,o,d,dt);
           const note = s.note ? `<span class="svcnote"> — ${s.note}</span>` : '';
+          const ai = arrivalInfo(d, s.arr);
+          const arrLine = ai ? `<br><span class="arr ${ai.status}">→ ${ai.dest} ~${ai.finalStr}${ai.conn?' · '+ai.conn:''}</span>` : '';
           parts.push(`<div class="drow"><span class="d">${niceDate(dt)}</span>
-            <span class="svc">${s.carrier}${s.no?' '+s.no:''} · ${s.dep}${star}→${s.arr}${star} ${tag}${note}</span>
+            <span class="svc">${s.carrier}${s.no?' '+s.no:''} · ${s.dep}${star}→${s.arr}${star} ${tag}${note}${arrLine}</span>
             <span><a href="${priceHref}" target="_blank" rel="noopener">price ↗</a> · <a href="${sky(o,d,dt)}" target="_blank" rel="noopener">all ↗</a></span></div>`);
         });
       }
@@ -445,10 +502,19 @@ function renderCompare(hostId, side, order){
     const flying=timed.filter(s=>s.days.includes(dow));
     const flies = flying.length>0 || others.length>0;
     const lh=routeLowHigh(key,mult);
-    return {key,o,d,flying,others,flies,lh};
+    const tmins=totalJourneyMins(key);
+    const repAi = flying.length ? arrivalInfo(d, flying[0].arr) : null;
+    return {key,o,d,flying,others,flies,lh,tmins,repAi};
   });
   const flyingLows = info.filter(x=>x.flies).map(x=>x.lh[0]);
   const minLow = flyingLows.length ? Math.min(...flyingLows) : Infinity;
+  const sortby = (document.getElementById('sortby')||{}).value || 'cheap';
+  info.sort((a,b)=>{
+    if(a.flies!==b.flies) return a.flies?-1:1;                 // flying routes first
+    if(sortby==='fast') return a.tmins-b.tmins;
+    if(sortby==='arrive'){ const av=a.repAi?a.repAi.finalMin:1e9, bv=b.repAi?b.repAi.finalMin:1e9; return av-bv; }
+    return a.lh[0]-b.lh[0];                                     // cheapest
+  });
   const cards = info.map(x=>{
     let body;
     if(x.flying.length){
@@ -458,12 +524,13 @@ function renderCompare(hostId, side, order){
     } else if(x.others.length){ body = `<span class="muted2">no fixed-time flight this day</span>`; }
     else { body = `<span class="muted2">no flight on ${DOW[dow]}</span>`; }
     const also = x.others.length ? `<div class="cmp-also">also: ${x.others.map(s=>s.carrier).join(', ')}</div>` : '';
+    const arrLine = x.repAi ? `<div class="arr ${x.repAi.status}">→ ${x.repAi.dest} ~${x.repAi.finalStr}${x.repAi.conn?' · '+x.repAi.conn:''}</div>` : '';
     const good = x.flies && x.lh[0] <= minLow*1.05;
     const badge = good ? `<span class="goodbadge">✓ Good value</span>` : '';
     return `<div class="cmp${good?' good':''}${x.flies?'':' muted'}" onclick="pickRoute('${side}','${x.key}')">
       <div class="cmp-h"><b>${ROUTELABEL[x.key]}</b> ${badge}</div>
-      <div class="cmp-air">flight ${x.o} → ${x.d}</div>
-      <div class="cmp-body">${body}</div>${also}
+      <div class="cmp-air">flight ${x.o} → ${x.d} · ~${fmtDur(x.tmins)} door-to-door</div>
+      <div class="cmp-body">${body}</div>${arrLine}${also}
       <div class="cmp-cost">${gbp(x.lh[0]*p)}–${gbp(x.lh[1]*p)} <span>${word}${p>1?' · '+p+'p':''}</span></div>
     </div>`;
   }).join('');
@@ -554,8 +621,9 @@ function buf(html,cls){ return {html,cls:cls||''}; }
 // RENDER
 // ============================================================================
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "1.8";
+const VERSION = "1.9";
 const CHANGELOG = [
+  ["1.9","2026-08-11","Usability pack: per-flight door-to-door arrival time in Cheltenham/Palafrugell with a green/amber/red last-connection check; door-to-door journey time on each routing; sort options by cheapest/fastest/earliest arrival; remembers your settings and supports shareable URLs; sticky date bar and bigger tap targets on mobile."],
   ["1.8","2026-08-11","Progressive disclosure: selecting a routing hides the others and shows only that route's flights, transfers and cost, with a 'Compare all four' back button. The cheapest routing (on typical fares) is highlighted green as a good-value option."],
   ["1.7","2026-08-11","Added a compare-all overview at the top of each direction: for your chosen date it shows all four routings at once — carriers, times, daytime fit and indicative cost — so you can compare without opening each. Tap a card to drill into full legs."],
   ["1.6","2026-08-11","Brought every carrier into scope: Barcelona–Bristol (easyJet, Ryanair) and Barcelona–Birmingham (Jet2, Vueling, easyJet, Ryanair). Fixed-time services show as dated rows; other carriers listed as 'also on this route' with per-carrier links."],
@@ -585,6 +653,7 @@ function applyPrefsUI(){
 }
 function render(){
   applyPrefsUI();
+  saveState();
   document.getElementById('stamp').textContent = DATA.lastUpdated;
   const outOrder=['gro_brs','gro_bhx','bcn_brs','bcn_bhx'], homeOrder=['brs_gro','bhx_gro','brs_bcn','bhx_bcn'];
   renderCompare('compare-out','out',outOrder);
@@ -626,14 +695,29 @@ function renderSide(side, routes, pickId, legsId, order){
   });
 }
 
-// defaults: outbound tomorrow→+7, return +14→+21
+// ---- persistence: remember settings (localStorage) + shareable URL params ----
+const PKEYS = ['outFrom','outTo','retFrom','retTo','daypref','pax','triptype','datemode','sortby'];
+function saveState(){
+  const o={}; PKEYS.forEach(k=>{ const e=document.getElementById(k); if(e) o[k]=e.value; }); o._dir=state.dir;
+  try{ localStorage.setItem('pcp', JSON.stringify(o)); }catch(e){}
+  try{ const q=new URLSearchParams(); Object.keys(o).forEach(k=>q.set(k,o[k])); history.replaceState(null,'','?'+q.toString()); }catch(e){}
+}
+function loadState(){
+  let o=null;
+  try{ const u=new URLSearchParams(location.search); if([...u.keys()].length){ o={}; u.forEach((v,k)=>o[k]=v); } }catch(e){}
+  if(!o){ try{ o=JSON.parse(localStorage.getItem('pcp')||'null'); }catch(e){} }
+  if(o){ PKEYS.forEach(k=>{ const e=document.getElementById(k); if(e && o[k]!=null && o[k]!=='') e.value=o[k]; }); if(o._dir) state.dir=o._dir; }
+}
+
+// defaults: outbound tomorrow→+7, return +14→+21 (overridden by saved/URL state if present)
 (function(){
   const t=n=>{ const x=new Date(); x.setDate(x.getDate()+n); return ymd(x); };
   document.getElementById('outFrom').value=t(1);  document.getElementById('outTo').value=t(7);
   document.getElementById('retFrom').value=t(14); document.getElementById('retTo').value=t(21);
-  ['outFrom','outTo','retFrom','retTo','daypref','pax','triptype','datemode'].forEach(id=>document.getElementById(id).onchange=render);
+  loadState();
+  ['outFrom','outTo','retFrom','retTo','daypref','pax','triptype','datemode','sortby'].forEach(id=>document.getElementById(id).onchange=render);
+  setDir(state.dir);   // apply restored direction + initial render
 })();
-render();
 </script>
 </body>
 </html>
