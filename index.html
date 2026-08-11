@@ -54,6 +54,8 @@ h1 { font-size:22px; margin:0 0 2px; letter-spacing:-0.2px; }
 .drow .svc { flex:1 1 200px; font-size:12.5px; color:#333; }
 .drow .noflight { font-size:12px; color:#98a; }
 .drow .svcnote { color:#8a93a0; font-size:11.5px; }
+.also { margin-top:10px; font-size:12.5px; color:#455; background:#eef4ff; border:1px solid #d3e0f7; border-radius:8px; padding:8px 11px; }
+.also a { color:#1a53d0; text-decoration:none; font-weight:600; }
 .drow a { text-decoration:none; color:#1a53d0; font-weight:600; font-size:12.5px; }
 @media(max-width:640px){ .scangrid{ grid-template-columns:1fr; } }
 
@@ -186,12 +188,28 @@ const DATA = {
       us: [{carrier:"Ryanair", no:"FR4416", days:[1,4,6], dep:"14:15", arr:"17:10", season:"Seasonal — check", approx:true, note:"days/time vary — confirm on the app"}]
     },
     bcn_brs: {
-      su: [{carrier:"easyJet / Ryanair", no:"", days:[0,1,2,3,4,5,6], dep:"10:50", arr:"12:15", season:"Year-round", approx:true, note:"several daily, roughly 06:00–22:00 — pick your time on the link"}],
-      us: [{carrier:"easyJet / Ryanair", no:"", days:[0,1,2,3,4,5,6], dep:"08:20", arr:"11:35", season:"Year-round", approx:true, note:"several daily, roughly 06:00–22:00 — pick your time on the link"}]
+      su: [
+        {carrier:"easyJet", no:"", days:[1,2,3,5,6], dep:"10:50", arr:"12:15", season:"Year-round", approx:true, note:"also evening departures"},
+        {carrier:"Ryanair", no:"", days:[0,1,2,3,4,5,6], dep:"", arr:"", season:"Year-round", approx:true, note:"early & mid-morning"}
+      ],
+      us: [
+        {carrier:"easyJet", no:"", days:[1,2,3,5,6], dep:"", arr:"", season:"Year-round", approx:true, note:""},
+        {carrier:"Ryanair", no:"", days:[0,1,2,3,4,5,6], dep:"", arr:"", season:"Year-round", approx:true, note:""}
+      ]
     },
     bcn_bhx: {
-      su: [{carrier:"Jet2", no:"LS1338", days:[0,1,2,3,4,5,6], dep:"11:30", arr:"13:00", season:"Year-round", approx:false, note:"Jet2 daily; Ryanair/easyJet/Vueling add other times"}],
-      us: [{carrier:"Jet2", no:"LS1337", days:[0,1,2,3,4,5,6], dep:"07:30", arr:"10:45", season:"Year-round", approx:false, note:"Jet2 daily; other carriers add later times"}]
+      su: [
+        {carrier:"Jet2", no:"LS1338", days:[0,1,2,3,4,5,6], dep:"11:30", arr:"13:00", season:"Year-round", approx:false, note:""},
+        {carrier:"Vueling", no:"", days:[0,1,2,3,4,5,6], dep:"", arr:"", season:"Year-round", approx:true, note:""},
+        {carrier:"easyJet", no:"", days:[0,1,2,3,4,5,6], dep:"", arr:"", season:"Year-round", approx:true, note:""},
+        {carrier:"Ryanair", no:"", days:[0,1,2,3,4,5,6], dep:"", arr:"", season:"Year-round", approx:true, note:""}
+      ],
+      us: [
+        {carrier:"Jet2", no:"LS1337", days:[0,1,2,3,4,5,6], dep:"07:30", arr:"10:45", season:"Year-round", approx:false, note:""},
+        {carrier:"Vueling", no:"", days:[0,1,2,3,4,5,6], dep:"", arr:"", season:"Year-round", approx:true, note:""},
+        {carrier:"easyJet", no:"", days:[0,1,2,3,4,5,6], dep:"", arr:"", season:"Year-round", approx:true, note:""},
+        {carrier:"Ryanair", no:"", days:[0,1,2,3,4,5,6], dep:"", arr:"", season:"Year-round", approx:true, note:""}
+      ]
     }
   },
 
@@ -239,6 +257,14 @@ const LINKS = {
   jet2:(f,t)=>`https://www.jet2.com/en/cheap-flights/${f}/${t}`,
   easyjet:"https://www.easyjet.com/en/cheap-flights"
 };
+// per-carrier booking links (dated where the operator allows it, else their search page)
+const CARRIER_URL = {
+  Ryanair:(o,d,dt)=>ryanair(o,d,dt),
+  Jet2:()=>"https://www.jet2.com/en/cheap-flights",
+  easyJet:()=>"https://www.easyjet.com/en/cheap-flights",
+  Vueling:()=>"https://www.vueling.com/en"
+};
+function carrierLink(c,o,d,dt){ const f=CARRIER_URL[c]; return f?f(o,d,dt):sky(o,d,dt); }
 // which IATA pair a routing flies (origin,dest by direction)
 const IATA = { gro_brs:["GRO","BRS"], gro_bhx:["GRO","BHX"], bcn_brs:["BCN","BRS"], bcn_bhx:["BCN","BHX"],
                brs_gro:["BRS","GRO"], bhx_gro:["BHX","GRO"], brs_bcn:["BRS","BCN"], bhx_bcn:["BHX","BCN"] };
@@ -311,25 +337,29 @@ function renderScan(hostId, routeKey, side){
   const dates = datesForSide(side);
   const dir = side==='out' ? 'su' : 'us';       // Spain→UK vs UK→Spain
   const svcs = (DATA.sched[SCHEDKEY[routeKey]] || {})[dir] || [];
+  const timed = svcs.filter(s=>s.dep);   // fixed-time services (dated rows)
+  const others = svcs.filter(s=>!s.dep); // carriers whose times vary daily
   const host=document.getElementById(hostId);
   const single = datemode()==='single';
   let rows;
   if(!dates.length){
     rows = `<div class="hint" style="margin:0">Set the ${single?'date':'dates'} above.</div>`;
+  } else if(!timed.length){
+    rows = `<p class="hint" style="margin:0 0 4px">This route's carriers vary their times through the day — pick your day and time on the links below.</p>`;
   } else {
-    let any=false; const parts=[];
+    const parts=[];
     dates.forEach(dt=>{
       const dow = new Date(dt+"T00:00:00").getDay();
-      const flying = svcs.filter(s=>s.days.includes(dow));
+      const flying = timed.filter(s=>s.days.includes(dow));
       if(!flying.length){
-        parts.push(`<div class="drow muted"><span class="d">${niceDate(dt)}</span><span class="noflight">no ${o}→${d} flight this day</span></div>`);
+        const msg = others.length ? 'no fixed-time flight — see carriers below' : `no ${o}→${d} flight this day`;
+        parts.push(`<div class="drow muted"><span class="d">${niceDate(dt)}</span><span class="noflight">${msg}</span></div>`);
       } else {
         flying.forEach(s=>{
-          any=true;
           const fit = inWindow(s.dep);
           const tag = fit===null ? '' : (fit ? '<span class="badge day">✓ daytime</span>' : '<span class="badge off">⚠ early/late</span>');
           const star = s.approx ? '*' : '';
-          const priceHref = s.carrier==='Ryanair' ? ryanair(o,d,dt) : sky(o,d,dt);
+          const priceHref = carrierLink(s.carrier,o,d,dt);
           const note = s.note ? `<span class="svcnote"> — ${s.note}</span>` : '';
           parts.push(`<div class="drow"><span class="d">${niceDate(dt)}</span>
             <span class="svc">${s.carrier}${s.no?' '+s.no:''} · ${s.dep}${star}→${s.arr}${star} ${tag}${note}</span>
@@ -337,13 +367,19 @@ function renderScan(hostId, routeKey, side){
         });
       }
     });
-    rows = `<div class="dlist">${parts.join('')}</div>` + (any?'':`<p class="hint" style="margin:8px 0 0">No flights on this route across those dates — widen the range or try another routing.</p>`);
+    rows = `<div class="dlist">${parts.join('')}</div>`;
   }
-  const season = svcs[0] ? svcs[0].season : '';
+  let alsoHtml='';
+  if(others.length){
+    const dt0 = dates[0] || tomorrowStr();
+    const chips = others.map(s=>`<a href="${carrierLink(s.carrier,o,d,dt0)}" target="_blank" rel="noopener">${s.carrier} ↗</a>`).join(' · ');
+    alsoHtml = `<div class="also"><b>Also on this route</b> (times vary — check day &amp; price on the link): ${chips} · <a href="${sky(o,d,dt0)}" target="_blank" rel="noopener">all fares ↗</a></div>`;
+  }
+  const season = (svcs[0]||{}).season || '';
   host.innerHTML = `<div class="scan">
     <h3>Flight options — ${o} → ${d}</h3>
-    <p class="hint">Only days this route actually flies show as options${season?' · '+season:''}. <b>*</b> = approximate time (days are reliable; confirm the time when booking). Tap <b>price</b> to check that exact day.</p>
-    ${rows}</div>`;
+    <p class="hint">Fixed-time services show per day${season?' · '+season:''}. <b>*</b> = approximate time. Other carriers on the route are listed below. Tap <b>price</b> for that carrier, <b>all</b> for every airline.</p>
+    ${rows}${alsoHtml}</div>`;
 }
 
 // ============================================================================
@@ -428,8 +464,9 @@ function buf(html,cls){ return {html,cls:cls||''}; }
 // RENDER
 // ============================================================================
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "1.5";
+const VERSION = "1.6";
 const CHANGELOG = [
+  ["1.6","2026-08-11","Brought every carrier into scope: Barcelona–Bristol (easyJet, Ryanair) and Barcelona–Birmingham (Jet2, Vueling, easyJet, Ryanair). Fixed-time services show as dated rows; other carriers listed as 'also on this route' with per-carrier links."],
   ["1.5","2026-08-11","Tightened flight schedules (representative times + 'varies' notes); added visible version & history; weekly task now auto-refreshes schedules and both the sidebar and hosted copies."],
   ["1.4","2026-08-11","Schedule-aware Flight options list — shows only the days each route actually flies, with times, daytime fit, and per-day price links."],
   ["1.3","2026-08-11","Added one-way trips and single-date mode; cost estimate adjusts to one-way."],

@@ -3,6 +3,14 @@
 All notable changes to the Palafrugell ↔ Cheltenham Spa journey planner.
 Versions are also shown in-app (header badge + footer "Version history").
 
+## [1.6] — 2026-08-11
+- Brought every carrier on each route into scope. Barcelona–Bristol now models
+  easyJet and Ryanair; Barcelona–Birmingham models Jet2, Vueling, easyJet and
+  Ryanair (Girona routes remain Ryanair-only).
+- Fixed-time services (e.g. Jet2 LS1337/1338, easyJet BCN–BRS) show as dated
+  rows with a daytime tag; carriers whose times vary day-to-day are listed as
+  "Also on this route" with a per-carrier booking link plus an all-airlines link.
+
 ## [1.5] — 2026-08-11
 - Tightened flight schedules with representative departure/arrival times and
   per-route "varies" notes (e.g. FR9335 alternates a ~09:40 and ~15:35 slot;
