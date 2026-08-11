@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Palafrugell &harr; Cheltenham Spa Travel Planner</title>
+<style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body { margin:0; background:#f7f8fa; color:#1c1e21; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; line-height:1.45; font-size:15px; }
+.wrap { max-width:1080px; margin:0 auto; padding:20px 18px 60px; }
+h1 { font-size:22px; margin:0 0 2px; letter-spacing:-0.2px; }
+.sub { color:#5b6470; font-size:13.5px; margin:0 0 14px; }
+.stamp { background:#eef1f6; border-radius:20px; padding:4px 12px; font-size:12.5px; color:#667; display:inline-block; margin-bottom:14px; }
+
+/* preferences panel */
+.prefs { background:#fff; border:1px solid #e4e7ec; border-radius:14px; padding:14px 16px; margin-bottom:18px; }
+.prefs h2 { font-size:14px; margin:0 0 10px; text-transform:uppercase; letter-spacing:.5px; color:#8a93a0; }
+.prow { display:flex; flex-wrap:wrap; gap:16px 22px; align-items:flex-end; }
+.field { display:flex; flex-direction:column; gap:4px; }
+.field label { font-size:12px; font-weight:600; color:#556; }
+.field .pair { display:flex; align-items:center; gap:6px; }
+.field input, .field select { font:inherit; font-size:13.5px; border:1px solid #cfd4dc; border-radius:7px; padding:5px 8px; }
+.field .arrow { color:#99a; }
+
+.tabs { display:flex; gap:8px; margin-bottom:16px; }
+.tab { flex:1; text-align:center; padding:11px 14px; border-radius:12px; border:1px solid #dde1e8; background:#fff; cursor:pointer; font-weight:600; font-size:14.5px; color:#333; transition:all .12s; }
+.tab.active { background:#1a53d0; color:#fff; border-color:#1a53d0; box-shadow:0 2px 8px rgba(26,83,208,.25); }
+.tab small { display:block; font-weight:400; font-size:11.5px; opacity:.8; margin-top:1px; }
+.dir { display:none; } .dir.active { display:block; }
+
+.routepick { display:flex; flex-wrap:wrap; gap:8px; margin:4px 0 16px; }
+.chip { padding:8px 14px; border-radius:20px; border:1px solid #d3d8e0; background:#fff; cursor:pointer; font-size:13.5px; font-weight:600; color:#3a4250; }
+.chip.active { background:#0d7a4f; color:#fff; border-color:#0d7a4f; }
+
+/* cost card */
+.cost { background:linear-gradient(135deg,#0d7a4f,#0a5f3e); color:#fff; border-radius:14px; padding:16px 18px; margin-bottom:14px; }
+.cost .big { font-size:26px; font-weight:700; letter-spacing:-.5px; }
+.cost .lbl { font-size:12.5px; opacity:.85; text-transform:uppercase; letter-spacing:.5px; }
+.cost .brk { display:flex; flex-wrap:wrap; gap:6px 18px; margin-top:10px; font-size:12.8px; }
+.cost .brk span { background:rgba(255,255,255,.15); border-radius:6px; padding:2px 9px; }
+.cost .tiny { font-size:11.5px; opacity:.8; margin-top:8px; }
+
+/* fare scan */
+.scan { background:#fff; border:1px solid #e4e7ec; border-radius:14px; padding:14px 16px; margin-bottom:14px; }
+.scan h3 { font-size:13.5px; margin:0 0 4px; }
+.scan .hint { font-size:12px; color:#667; margin:0 0 10px; }
+.scangrid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.scancol h4 { font-size:12px; text-transform:uppercase; letter-spacing:.5px; color:#8a93a0; margin:0 0 6px; }
+.dlist { display:flex; flex-direction:column; gap:5px; }
+.drow { display:flex; align-items:center; justify-content:space-between; gap:8px; background:#f4f6f9; border-radius:8px; padding:5px 10px; font-size:13px; }
+.drow .d { font-weight:600; }
+.drow a { text-decoration:none; color:#1a53d0; font-weight:600; font-size:12.5px; }
+@media(max-width:640px){ .scangrid{ grid-template-columns:1fr; } }
+
+.legs { display:flex; flex-direction:column; gap:12px; }
+.leg { background:#fff; border:1px solid #e4e7ec; border-radius:14px; padding:14px 16px; }
+.leg-head { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.num { flex:none; width:26px; height:26px; border-radius:50%; background:#1a53d0; color:#fff; font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+.leg h3 { font-size:15.5px; margin:0; }
+.mode { font-size:11.5px; text-transform:uppercase; letter-spacing:.5px; color:#8a93a0; font-weight:700; }
+.leg .facts { display:flex; flex-wrap:wrap; gap:6px 16px; font-size:13px; color:#444; margin:4px 0 10px; }
+.leg .facts b { color:#1c1e21; }
+.badge { display:inline-block; border-radius:6px; padding:1px 8px; font-size:11.5px; font-weight:700; }
+.badge.day { background:#e3f5ea; color:#0d7a4f; }
+.badge.off { background:#fbe7e7; color:#b23; }
+.links { display:flex; flex-wrap:wrap; gap:8px; }
+.btn { display:inline-flex; align-items:center; gap:6px; text-decoration:none; font-size:13px; font-weight:600; padding:7px 13px; border-radius:9px; background:#1a53d0; color:#fff; }
+.btn.alt { background:#fff; color:#1a53d0; border:1px solid #b9c6ea; }
+.btn:hover { filter:brightness(1.06); }
+.connector { text-align:center; color:#9aa3b0; font-size:20px; line-height:1; margin:-4px 0; }
+.buffer { margin-top:10px; background:#fff8e8; border:1px solid #f2e0b0; border-radius:10px; padding:9px 12px; font-size:12.8px; color:#7a5b12; }
+.buffer.warn { background:#fdecec; border-color:#f3bcbc; color:#8f2020; }
+.note { font-size:12.5px; color:#5b6470; background:#eef4ff; border:1px solid #d3e0f7; border-radius:10px; padding:10px 13px; margin:6px 0 16px; }
+footer { margin-top:26px; font-size:11.5px; color:#8a93a0; border-top:1px solid #e4e7ec; padding-top:14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Palafrugell &harr; Cheltenham Spa &mdash; Journey Planner</h1>
+  <p class="sub">Every leg, both directions, all four airport routings, with an indicative cost per trip. Timetables &amp; fares refresh weekly in the background; flight prices link out live.</p>
+  <span class="stamp">Timetables &amp; fares last refreshed: <b id="stamp">&mdash;</b></span>
+
+  <div class="prefs">
+    <h2>Trip window &amp; preferences</h2>
+    <div class="prow">
+      <div class="field">
+        <label>Trip type</label>
+        <select id="triptype"><option value="return" selected>Return</option><option value="oneway">One-way</option></select>
+      </div>
+      <div class="field">
+        <label>Dates</label>
+        <select id="datemode"><option value="range" selected>Date range</option><option value="single">Single date</option></select>
+      </div>
+      <div class="field" id="outField">
+        <label id="outLabel">Outbound &mdash; depart between</label>
+        <div class="pair"><input type="date" id="outFrom"><span class="arrow" id="outArrow">&rarr;</span><input type="date" id="outTo"></div>
+      </div>
+      <div class="field" id="retField">
+        <label id="retLabel">Return &mdash; depart between</label>
+        <div class="pair"><input type="date" id="retFrom"><span class="arrow" id="retArrow">&rarr;</span><input type="date" id="retTo"></div>
+      </div>
+      <div class="field">
+        <label>Time of day preference</label>
+        <select id="daypref">
+          <option value="day" selected>Daytime only (08:00&ndash;20:00)</option>
+          <option value="mid">Relaxed (07:00&ndash;22:00)</option>
+          <option value="any">Any time</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Travellers</label>
+        <input type="number" id="pax" min="1" max="9" value="1" style="width:70px">
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-dir="out" onclick="setDir('out')">Outbound<small>Palafrugell &rarr; Cheltenham</small></div>
+    <div class="tab" data-dir="home" onclick="setDir('home')">Homebound<small>Cheltenham &rarr; Palafrugell</small></div>
+  </div>
+
+  <section class="dir active" id="dir-out">
+    <div class="note"><b>Pick your routing.</b> Girona is closest and best in summer; Barcelona &amp; Birmingham tend to work better in the shoulder/winter season. Buffers assume you never want to risk the last onward connection; the cost is an indicative return per traveller.</div>
+    <div class="routepick" id="pick-out"></div>
+    <div id="cost-out"></div>
+    <div id="scan-out"></div>
+    <div class="legs" id="legs-out"></div>
+  </section>
+
+  <section class="dir" id="dir-home">
+    <div class="note"><b>Coming home.</b> The risky link is the last airport bus/flight on the Spanish side and making check-in in time. Buffers assume a 2-hour airport check-in for Ryanair/Jet2.</div>
+    <div class="routepick" id="pick-home"></div>
+    <div id="cost-home"></div>
+    <div id="scan-home"></div>
+    <div class="legs" id="legs-home"></div>
+  </section>
+
+  <footer id="foot"></footer>
+</div>
+
+<script>
+// ============================================================================
+// DATA — the weekly background task rewrites this block and bumps lastUpdated.
+// ============================================================================
+const DATA = {
+  lastUpdated: "2026-08-11",
+  eurToGbp: 0.85,                       // approx; refreshed weekly
+
+  buses: {
+    pgl_gro: { freq:"Hourly", first:"~05:00", last:"~22:00", dur:"1h00–1h10", fare:"€8–12",
+               note:"Moventis (Sarfa) towards Girona; some summer services run direct to Girona Airport." },
+    pgl_bcn: { freq:"~18–24/day", first:"04:15", last:"23:25", dur:"2h10–2h20", fare:"€22–30",
+               note:"Moventis (Sarfa) direct coach Palafrugell → Barcelona Airport (T2, then T1)." }
+  },
+  // known scheduled departure times let us tag daytime vs early/late; prices always via live link
+  flights: {
+    gro_brs: { carrier:"Ryanair", season:"Apr–Oct (summer only)", days:"Tue, Fri, Sat, Sun", dur:"~2h00", fare:"£30–110", depOut:"~16:00", depHome:"18:55" },
+    gro_bhx: { carrier:"Ryanair", season:"Seasonal — check", days:"Varies", dur:"~2h05", fare:"£30–110", depOut:"", depHome:"" },
+    bcn_brs: { carrier:"easyJet / Ryanair", season:"Year-round", days:"Most days", dur:"~2h00", fare:"£35–130", depOut:"", depHome:"" },
+    bcn_bhx: { carrier:"Jet2 / Ryanair / easyJet / Vueling", season:"Year-round", days:"Daily", dur:"~2h15", fare:"£40–150", depOut:"11:30", depHome:"07:30" }
+  },
+  bristol: {
+    flyer: { name:"Airport Flyer A1", freq:"Every 8–12 min peak, hourly overnight (24h)", dur:"30–40 min", fare:"£9.50" },
+    train: { op:"CrossCountry / GWR", freq:"~Every 30–60 min", dur:"37–60 min", last:"~23:00", fare:"£6–14" }
+  },
+  birmingham: {
+    shuttle: { op:"WMR / XC / Avanti", freq:"Every 5–10 min", dur:"9–15 min", fare:"£3.50–6" },
+    train: { op:"CrossCountry", freq:"~Every 30 min", dur:"38–48 min", last:"~22:12", fare:"£6–16" }
+  },
+
+  // numeric fares (one-way, per adult) for the cost estimator
+  fareNum: {
+    bus_pgl_gro:  { cur:"EUR", low:8,  high:12 },
+    bus_pgl_bcn:  { cur:"EUR", low:22, high:30 },
+    flyer:        { cur:"GBP", low:9.5, high:9.5 },
+    train_bristol:{ cur:"GBP", low:6,  high:14 },
+    shuttle_bham: { cur:"GBP", low:3.5, high:6 },
+    train_bham:   { cur:"GBP", low:6,  high:16 },
+    fl_gro_brs:   { cur:"GBP", low:30, high:110 },
+    fl_gro_bhx:   { cur:"GBP", low:30, high:110 },
+    fl_bcn_brs:   { cur:"GBP", low:35, high:130 },
+    fl_bcn_bhx:   { cur:"GBP", low:40, high:150 }
+  }
+};
+
+// routing composition: [spanishBus, flightFareKey, [ukLeg1, ukLeg2]]
+const COMPOSE = {
+  gro_brs: ["bus_pgl_gro","fl_gro_brs",["flyer","train_bristol"]],
+  gro_bhx: ["bus_pgl_gro","fl_gro_bhx",["shuttle_bham","train_bham"]],
+  bcn_brs: ["bus_pgl_bcn","fl_bcn_brs",["flyer","train_bristol"]],
+  bcn_bhx: ["bus_pgl_bcn","fl_bcn_bhx",["shuttle_bham","train_bham"]],
+  // homebound keys map to the same components
+  brs_gro: ["bus_pgl_gro","fl_gro_brs",["flyer","train_bristol"]],
+  bhx_gro: ["bus_pgl_gro","fl_gro_bhx",["shuttle_bham","train_bham"]],
+  brs_bcn: ["bus_pgl_bcn","fl_bcn_brs",["flyer","train_bristol"]],
+  bhx_bcn: ["bus_pgl_bcn","fl_bcn_bhx",["shuttle_bham","train_bham"]]
+};
+
+// ---- links ----
+function ryanair(o,d,date){ return `https://www.ryanair.com/gb/en/trip/flights/select?adults=1&teenagers=0&children=0&infants=0&dateOut=${date}&originIata=${o}&destinationIata=${d}&isConnectedFlight=false&isReturn=false`; }
+function sky(o,d,date){ const p=date.split('-'); return `https://www.skyscanner.net/transport/flights/${o.toLowerCase()}/${d.toLowerCase()}/${p[0].slice(2)}${p[1]}${p[2]}/`; }
+const LINKS = {
+  bus_pgl_gro:"https://www.moventis.es/en/lines-timetables",
+  bus_pgl_bcn:"https://www.moventis.es/en/barcelona-airport",
+  flyer:"https://flyer.bristolairport.co.uk/timetables",
+  natrail:(f,t)=>`https://www.nationalrail.co.uk/live-trains/departures/${f}/${t}/`,
+  trainline:(s)=>`https://www.thetrainline.com/train-times/${s}`,
+  jet2:(f,t)=>`https://www.jet2.com/en/cheap-flights/${f}/${t}`,
+  easyjet:"https://www.easyjet.com/en/cheap-flights"
+};
+// which IATA pair a routing flies (origin,dest by direction)
+const IATA = { gro_brs:["GRO","BRS"], gro_bhx:["GRO","BHX"], bcn_brs:["BCN","BRS"], bcn_bhx:["BCN","BHX"],
+               brs_gro:["BRS","GRO"], bhx_gro:["BHX","GRO"], brs_bcn:["BRS","BCN"], bhx_bcn:["BHX","BCN"] };
+
+// ---- helpers ----
+function gbp(n){ return "£"+(n%1?n.toFixed(2):n.toFixed(0)); }
+function pax(){ return Math.max(1, parseInt(document.getElementById('pax').value||"1",10)); }
+function daypref(){ return document.getElementById('daypref').value; }
+function triptype(){ return document.getElementById('triptype').value; }   // 'return' | 'oneway'
+function datemode(){ return document.getElementById('datemode').value; }   // 'range' | 'single'
+function inWindow(hhmm){ if(!hhmm) return null; const h=parseInt(hhmm.split(':')[0],10); const p=daypref();
+  if(p==='any') return true; if(p==='mid') return h>=7 && h<22; return h>=8 && h<20; }
+
+// which date inputs feed a given direction. One-way uses the single outbound field for whichever tab is active.
+function dateIdsFor(side){
+  if(triptype()==='oneway') return ['outFrom','outTo'];
+  return side==='home' ? ['retFrom','retTo'] : ['outFrom','outTo'];
+}
+// list of dates (YYYY-MM-DD), capped. Single-date mode ignores the "to" field.
+function dateRange(fromId,toId){
+  const a=document.getElementById(fromId).value;
+  if(!a) return [];
+  const b = datemode()==='single' ? a : (document.getElementById(toId).value || a);
+  const start=new Date(a+"T00:00:00"); const end=new Date(b+"T00:00:00");
+  const out=[]; let d=new Date(start), n=0;
+  while(d<=end && n<21){ out.push(d.toISOString().slice(0,10)); d=new Date(d.getTime()+86400000); n++; }
+  return out;
+}
+function datesForSide(side){ const ids=dateIdsFor(side); return dateRange(ids[0],ids[1]); }
+function firstDateFor(side){ const ds=datesForSide(side); return ds[0] || new Date(Date.now()+86400000).toISOString().slice(0,10); }
+function niceDate(s){ return new Date(s+"T00:00:00").toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}); }
+
+// ---- cost estimate (indicative return, per traveller) ----
+// one-way per-leg costs in GBP
+function costFor(routeKey){
+  const [busK, flK, uk] = COMPOSE[routeKey];
+  const fx = DATA.eurToGbp;
+  const F = DATA.fareNum;
+  function toGbp(k){ const f=F[k]; const m = f.cur==='EUR'?fx:1; return [f.low*m, f.high*m]; }
+  const bus=toGbp(busK), fl=toGbp(flK), l1=toGbp(uk[0]), l2=toGbp(uk[1]);
+  return {
+    bus:[bus[0],bus[1]], fl:[fl[0],fl[1]], grnd:[l1[0]+l2[0], l1[1]+l2[1]]
+  };
+}
+function renderCost(hostId, routeKey){
+  const c=costFor(routeKey); const p=pax();
+  const mult = triptype()==='oneway' ? 1 : 2;
+  const word = mult===1 ? 'one-way' : 'return';
+  const low  = mult*(c.bus[0]+c.fl[0]+c.grnd[0]);
+  const high = mult*(c.bus[1]+c.fl[1]+c.grnd[1]);
+  const host=document.getElementById(hostId);
+  host.innerHTML = `<div class="cost">
+    <div class="lbl">Indicative ${word} · ${p>1?p+' travellers':'1 traveller'}</div>
+    <div class="big">${gbp(low*p)} – ${gbp(high*p)}</div>
+    <div class="brk">
+      <span>Flights ${gbp(mult*c.fl[0]*p)}–${gbp(mult*c.fl[1]*p)}</span>
+      <span>Spanish coach ${gbp(mult*c.bus[0]*p)}–${gbp(mult*c.bus[1]*p)}</span>
+      <span>UK ground ${gbp(mult*c.grnd[0]*p)}–${gbp(mult*c.grnd[1]*p)}</span>
+    </div>
+    <div class="tiny">Ground fares are indicative (advance–walk-up); flights are a typical range — use the date scan below for real prices. €→£ at ${DATA.eurToGbp}.</div>
+  </div>`;
+}
+
+// ---- fare scan: per-date flight price links across your window ----
+function renderScan(hostId, routeKey, side){
+  const [o,d] = IATA[routeKey];            // flight direction for this tab
+  const dates = datesForSide(side);
+  const host=document.getElementById(hostId);
+  const single = datemode()==='single';
+  let inner;
+  if(!dates.length){
+    inner = `<div class="hint" style="margin:0">Set the ${single?'date':'dates'} above.</div>`;
+  } else {
+    inner = `<div class="dlist">`+dates.map(dt=>`<div class="drow"><span class="d">${niceDate(dt)}</span>
+      <span><a href="${sky(o,d,dt)}" target="_blank" rel="noopener">All fares ↗</a> &nbsp;
+      <a href="${ryanair(o,d,dt)}" target="_blank" rel="noopener">Ryanair ↗</a></span></div>`).join('')+`</div>`;
+  }
+  host.innerHTML = `<div class="scan">
+    <h3>Fare ${single?'check':'scan'} — ${o} → ${d}</h3>
+    <p class="hint">Each day links to live prices (all airlines via Skyscanner, plus Ryanair). Pick the cheapest day that also has a daytime departure.</p>
+    ${inner}</div>`;
+}
+
+// ============================================================================
+// ROUTE DEFINITIONS
+// ============================================================================
+function flightDep(f, side){ return side==='out' ? f.depOut : f.depHome; }
+function dayBadge(dep){ const w=inWindow(dep); if(w===null) return ''; return w
+  ? `<span class="badge day">✓ daytime dep ${dep}</span>` : `<span class="badge off">⚠ ${dep} — outside your window</span>`; }
+
+function outboundRoutes(){
+ const D = firstDateFor('out');
+ return {
+  gro_brs:{ label:"Girona → Bristol", legs:[
+    leg(1,"bus","Palafrugell → Girona Airport",fBus(DATA.buses.pgl_gro),[btn("Bus times",LINKS.bus_pgl_gro,'alt')],buf("Reach Girona ≥2h before the flight — Ryanair closes check-in strictly.")),
+    leg(2,"flight","Girona (GRO) → Bristol (BRS)",fFlight(DATA.flights.gro_brs,'out'),[btn("Ryanair — this date",ryanair('GRO','BRS',D)),btn("All fares",sky('GRO','BRS',D),'alt')],buf("Summer-only route. If not flying your week, switch to a Barcelona routing.","warn")),
+    leg(3,"bus","Bristol Airport → Temple Meads",fFlyer(),[btn("Flyer A1 times",LINKS.flyer,'alt')],buf("Very frequent — low risk. Allow ~60–90 min after landing for deplane, passport &amp; bags.")),
+    leg(4,"train","Bristol Temple Meads → Cheltenham Spa",fTrain(DATA.bristol.train),[btn("Live times",LINKS.natrail('bristol-temple-meads','cheltenham-spa')),btn("Trainline",LINKS.trainline('bristol-temple-meads-to-cheltenham-spa'),'alt')],buf("<b>Last train ≈ "+DATA.bristol.train.last+".</b> Land by ~21:00 to make it comfortably; later flight → Bristol overnight/taxi.","warn"))
+  ]},
+  gro_bhx:{ label:"Girona → Birmingham", legs:[
+    leg(1,"bus","Palafrugell → Girona Airport",fBus(DATA.buses.pgl_gro),[btn("Bus times",LINKS.bus_pgl_gro,'alt')],buf("Reach Girona ≥2h before the flight.")),
+    leg(2,"flight","Girona (GRO) → Birmingham (BHX)",fFlight(DATA.flights.gro_bhx,'out'),[btn("Ryanair — this date",ryanair('GRO','BHX',D)),btn("All fares",sky('GRO','BHX',D),'alt')],buf("Confirm the route is operating your week — Girona is seasonal.","warn")),
+    leg(3,"train","Birmingham International → New Street",fShuttle(),[btn("Live times",LINKS.natrail('birmingham-international','birmingham-new-street'))],buf("Every few minutes — low risk. Short covered Air-Rail Link walk from the terminal.")),
+    leg(4,"train","Birmingham New Street → Cheltenham Spa",fTrain(DATA.birmingham.train),[btn("Live times",LINKS.natrail('birmingham-new-street','cheltenham-spa')),btn("Trainline",LINKS.trainline('birmingham-new-street-to-cheltenham-spa'),'alt')],buf("<b>Last train ≈ "+DATA.birmingham.train.last+".</b> Land by ~20:15 to be safe.","warn"))
+  ]},
+  bcn_brs:{ label:"Barcelona → Bristol", legs:[
+    leg(1,"bus","Palafrugell → Barcelona Airport",fBus(DATA.buses.pgl_bcn),[btn("Bus times",LINKS.bus_pgl_bcn,'alt')],buf("Long leg (~2h20). Aim to be at BCN ≥2h30 before the flight to absorb Costa Brava traffic.","warn")),
+    leg(2,"flight","Barcelona (BCN) → Bristol (BRS)",fFlight(DATA.flights.bcn_brs,'out'),[btn("Ryanair — this date",ryanair('BCN','BRS',D)),btn("easyJet",LINKS.easyjet,'alt'),btn("All fares",sky('BCN','BRS',D),'alt')],buf("Year-round — good winter/shoulder option.")),
+    leg(3,"bus","Bristol Airport → Temple Meads",fFlyer(),[btn("Flyer A1 times",LINKS.flyer,'alt')],buf("Frequent. Allow ~60–90 min after landing before relying on a train.")),
+    leg(4,"train","Bristol Temple Meads → Cheltenham Spa",fTrain(DATA.bristol.train),[btn("Live times",LINKS.natrail('bristol-temple-meads','cheltenham-spa')),btn("Trainline",LINKS.trainline('bristol-temple-meads-to-cheltenham-spa'),'alt')],buf("<b>Last train ≈ "+DATA.bristol.train.last+".</b> Land by ~21:00 to be safe.","warn"))
+  ]},
+  bcn_bhx:{ label:"Barcelona → Birmingham", legs:[
+    leg(1,"bus","Palafrugell → Barcelona Airport",fBus(DATA.buses.pgl_bcn),[btn("Bus times",LINKS.bus_pgl_bcn,'alt')],buf("Take a bus arriving BCN ≥2h30 before departure.","warn")),
+    leg(2,"flight","Barcelona (BCN) → Birmingham (BHX)",fFlight(DATA.flights.bcn_bhx,'out'),[btn("Jet2",LINKS.jet2('barcelona','birmingham')),btn("Ryanair — this date",ryanair('BCN','BHX',D),'alt'),btn("All fares",sky('BCN','BHX',D),'alt')],buf("Best year-round option — several carriers daily.")),
+    leg(3,"train","Birmingham International → New Street",fShuttle(),[btn("Live times",LINKS.natrail('birmingham-international','birmingham-new-street'))],buf("Every few minutes — low risk.")),
+    leg(4,"train","Birmingham New Street → Cheltenham Spa",fTrain(DATA.birmingham.train),[btn("Live times",LINKS.natrail('birmingham-new-street','cheltenham-spa')),btn("Trainline",LINKS.trainline('birmingham-new-street-to-cheltenham-spa'),'alt')],buf("<b>Last train ≈ "+DATA.birmingham.train.last+".</b> Land by ~20:15 to be safe.","warn"))
+  ]}
+ };
+}
+
+function homeboundRoutes(){
+ const D = firstDateFor('home');
+ return {
+  brs_gro:{ label:"Bristol → Girona", legs:[
+    leg(1,"train","Cheltenham Spa → Bristol Temple Meads",fTrain(DATA.bristol.train),[btn("Live times",LINKS.natrail('cheltenham-spa','bristol-temple-meads')),btn("Trainline",LINKS.trainline('cheltenham-spa-to-bristol-temple-meads'),'alt')],buf("Reach Temple Meads ~3h before the flight (Flyer + 2h check-in).")),
+    leg(2,"bus","Temple Meads → Bristol Airport",fFlyer(),[btn("Flyer A1 times",LINKS.flyer,'alt')],buf("Runs 24h. Allow 40 min + traffic; be at the airport ≥2h before departure.")),
+    leg(3,"flight","Bristol (BRS) → Girona (GRO)",fFlight(DATA.flights.gro_brs,'home'),[btn("Ryanair — this date",ryanair('BRS','GRO',D)),btn("All fares",sky('BRS','GRO',D),'alt')],buf("Summer-only; typical evening departure.","warn")),
+    leg(4,"bus","Girona Airport → Palafrugell",fBus(DATA.buses.pgl_gro),[btn("Bus times",LINKS.bus_pgl_gro,'alt')],buf("<b>Last bus ≈ "+DATA.buses.pgl_gro.last+".</b> An evening flight can land after it — have a Girona taxi/overnight as backup.","warn"))
+  ]},
+  bhx_gro:{ label:"Birmingham → Girona", legs:[
+    leg(1,"train","Cheltenham Spa → Birmingham New Street",fTrain(DATA.birmingham.train),[btn("Live times",LINKS.natrail('cheltenham-spa','birmingham-new-street')),btn("Trainline",LINKS.trainline('cheltenham-spa-to-birmingham-new-street'),'alt')],buf("Reach New Street ~3h before the flight.")),
+    leg(2,"train","New Street → Birmingham International",fShuttle(),[btn("Live times",LINKS.natrail('birmingham-new-street','birmingham-international'))],buf("Every few minutes — low risk.")),
+    leg(3,"flight","Birmingham (BHX) → Girona (GRO)",fFlight(DATA.flights.gro_bhx,'home'),[btn("Ryanair — this date",ryanair('BHX','GRO',D)),btn("All fares",sky('BHX','GRO',D),'alt')],buf("Seasonal — confirm it's operating.","warn")),
+    leg(4,"bus","Girona Airport → Palafrugell",fBus(DATA.buses.pgl_gro),[btn("Bus times",LINKS.bus_pgl_gro,'alt')],buf("<b>Mind the last bus ≈ "+DATA.buses.pgl_gro.last+".</b> Backup taxi if you land late.","warn"))
+  ]},
+  brs_bcn:{ label:"Bristol → Barcelona", legs:[
+    leg(1,"train","Cheltenham Spa → Bristol Temple Meads",fTrain(DATA.bristol.train),[btn("Live times",LINKS.natrail('cheltenham-spa','bristol-temple-meads')),btn("Trainline",LINKS.trainline('cheltenham-spa-to-bristol-temple-meads'),'alt')],buf("Reach Temple Meads ~3h before the flight.")),
+    leg(2,"bus","Temple Meads → Bristol Airport",fFlyer(),[btn("Flyer A1 times",LINKS.flyer,'alt')],buf("24h service. Be at the airport ≥2h before departure.")),
+    leg(3,"flight","Bristol (BRS) → Barcelona (BCN)",fFlight(DATA.flights.bcn_brs,'home'),[btn("Ryanair — this date",ryanair('BRS','BCN',D)),btn("easyJet",LINKS.easyjet,'alt'),btn("All fares",sky('BRS','BCN',D),'alt')],buf("Year-round.")),
+    leg(4,"bus","Barcelona Airport → Palafrugell",fBus(DATA.buses.pgl_bcn),[btn("Bus times",LINKS.bus_pgl_bcn,'alt')],buf("<b>Last direct coach ≈ "+DATA.buses.pgl_bcn.last+".</b> Land after ~22:00 → plan the last coach or a BCN overnight.","warn"))
+  ]},
+  bhx_bcn:{ label:"Birmingham → Barcelona", legs:[
+    leg(1,"train","Cheltenham Spa → Birmingham New Street",fTrain(DATA.birmingham.train),[btn("Live times",LINKS.natrail('cheltenham-spa','birmingham-new-street')),btn("Trainline",LINKS.trainline('cheltenham-spa-to-birmingham-new-street'),'alt')],buf("Reach New Street ~3h before the flight.")),
+    leg(2,"train","New Street → Birmingham International",fShuttle(),[btn("Live times",LINKS.natrail('birmingham-new-street','birmingham-international'))],buf("Every few minutes — low risk.")),
+    leg(3,"flight","Birmingham (BHX) → Barcelona (BCN)",fFlight(DATA.flights.bcn_bhx,'home'),[btn("Jet2",LINKS.jet2('birmingham','barcelona')),btn("Ryanair — this date",ryanair('BHX','BCN',D),'alt'),btn("All fares",sky('BHX','BCN',D),'alt')],buf("Best year-round option. Jet2 typically departs BHX ~07:30.")),
+    leg(4,"bus","Barcelona Airport → Palafrugell",fBus(DATA.buses.pgl_bcn),[btn("Bus times",LINKS.bus_pgl_bcn,'alt')],buf("<b>Last direct coach ≈ "+DATA.buses.pgl_bcn.last+".</b> Morning flight lands early — plenty of coaches.","warn"))
+  ]}
+ };
+}
+
+// ---- fact-string helpers (now include fare) ----
+function fBus(b){ return [["Frequency",b.freq],["First",b.first],["Last",b.last],["Journey",b.dur],["~Fare",b.fare]]; }
+function fFlight(f,side){ const dep=flightDep(f,side); const badge=dep?dayBadge(dep):''; return {rows:[["Carrier",f.carrier],["Season",f.season],["Days",f.days],["Flight time",f.dur],["~Fare pp",f.fare]], badge}; }
+function fFlyer(){ const b=DATA.bristol.flyer; return [["Service",b.name],["Frequency",b.freq],["Journey",b.dur],["~Fare",b.fare]]; }
+function fShuttle(){ const b=DATA.birmingham.shuttle; return [["Operator",b.op],["Frequency",b.freq],["Journey",b.dur],["~Fare",b.fare]]; }
+function fTrain(t){ return [["Operator",t.op],["Frequency",t.freq],["Journey",t.dur],["Last train",t.last],["~Fare",t.fare]]; }
+
+function leg(n,mode,title,facts,links,buffer){ return {n,mode,title,facts,links,buffer}; }
+function btn(label,href,cls){ return {label,href,cls:cls||''}; }
+function buf(html,cls){ return {html,cls:cls||''}; }
+
+// ============================================================================
+// RENDER
+// ============================================================================
+const state = { dir:'out', out:'gro_brs', home:'bhx_bcn' };
+function setDir(d){ state.dir=d;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.dir===d));
+  document.getElementById('dir-out').classList.toggle('active',d==='out');
+  document.getElementById('dir-home').classList.toggle('active',d==='home');
+  render();
+}
+function applyPrefsUI(){
+  const single = datemode()==='single';
+  const oneway = triptype()==='oneway';
+  ['outTo','outArrow','retTo','retArrow'].forEach(id=>{ const e=document.getElementById(id); if(e) e.style.display = single?'none':''; });
+  const outL=document.getElementById('outLabel'), retL=document.getElementById('retLabel');
+  outL.innerHTML = (oneway ? 'Travel' : 'Outbound') + (single ? ' &mdash; date' : ' &mdash; depart between');
+  retL.innerHTML = 'Return' + (single ? ' &mdash; date' : ' &mdash; depart between');
+  document.getElementById('retField').style.display = oneway ? 'none' : '';
+}
+function render(){
+  applyPrefsUI();
+  document.getElementById('stamp').textContent = DATA.lastUpdated;
+  renderSide('out', outboundRoutes(),'pick-out','legs-out',['gro_brs','gro_bhx','bcn_brs','bcn_bhx']);
+  renderSide('home', homeboundRoutes(),'pick-home','legs-home',['brs_gro','bhx_gro','brs_bcn','bhx_bcn']);
+  renderCost('cost-out', state.out); renderScan('scan-out', state.out,'out');
+  renderCost('cost-home', state.home); renderScan('scan-home', state.home,'home');
+  document.getElementById('foot').innerHTML =
+    "Prices &amp; live seat availability aren't scrapeable from airlines — flight buttons open live search for your dates; ground fares are indicative. "+
+    "Daytime tags use published flight times where known; always confirm the exact departure on the day. Times &amp; fares can change seasonally.";
+}
+function renderSide(side, routes, pickId, legsId, order){
+  const pick=document.getElementById(pickId); pick.innerHTML='';
+  order.forEach(key=>{ const c=document.createElement('div'); c.className='chip'+(state[side]===key?' active':'');
+    c.textContent=routes[key].label; c.onclick=()=>{ state[side]=key; render(); }; pick.appendChild(c); });
+  const legs=routes[state[side]].legs; const host=document.getElementById(legsId); host.innerHTML='';
+  legs.forEach((L,i)=>{
+    const el=document.createElement('div'); el.className='leg';
+    const factRows = Array.isArray(L.facts)?L.facts:L.facts.rows;
+    const badge = (!Array.isArray(L.facts)&&L.facts.badge)?' '+L.facts.badge:'';
+    let facts=factRows.map(f=>`<span><b>${f[0]}:</b> ${f[1]}</span>`).join('')+badge;
+    let links=L.links.map(b=>`<a class="btn ${b.cls}" href="${b.href}" target="_blank" rel="noopener">${b.label} ↗</a>`).join('');
+    let buffer=L.buffer?`<div class="buffer ${L.buffer.cls}">${L.buffer.html}</div>`:'';
+    el.innerHTML=`<div class="leg-head"><span class="num">${L.n}</span><div><h3>${L.title}</h3><span class="mode">${L.mode}</span></div></div>
+      <div class="facts">${facts}</div><div class="links">${links}</div>${buffer}`;
+    host.appendChild(el);
+    if(i<legs.length-1){ const c=document.createElement('div'); c.className='connector'; c.textContent='↓'; host.appendChild(c); }
+  });
+}
+
+// defaults: outbound tomorrow→+7, return +14→+21
+(function(){
+  const t=n=>new Date(Date.now()+n*86400000).toISOString().slice(0,10);
+  document.getElementById('outFrom').value=t(1);  document.getElementById('outTo').value=t(7);
+  document.getElementById('retFrom').value=t(14); document.getElementById('retTo').value=t(21);
+  ['outFrom','outTo','retFrom','retTo','daypref','pax','triptype','datemode'].forEach(id=>document.getElementById(id).onchange=render);
+})();
+render();
+</script>
+</body>
+</html>
