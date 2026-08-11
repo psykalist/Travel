@@ -3,6 +3,12 @@
 All notable changes to the Palafrugell ↔ Cheltenham Spa journey planner.
 Versions are also shown in-app (header badge + footer "Version history").
 
+## [1.7] — 2026-08-11
+- Added a **compare-all overview** at the top of each direction. Pick a date and
+  it shows all four routings side by side — which carriers fly that day, their
+  times, daytime fit, and the indicative cost — so you can compare at a glance
+  without opening each routing. Tap a card to drill into the full legs/options.
+
 ## [1.6] — 2026-08-11
 - Brought every carrier on each route into scope. Barcelona–Bristol now models
   easyJet and Ryanair; Barcelona–Birmingham models Jet2, Vueling, easyJet and

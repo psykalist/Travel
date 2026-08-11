@@ -29,6 +29,22 @@ h1 { font-size:22px; margin:0 0 2px; letter-spacing:-0.2px; }
 .tab small { display:block; font-weight:400; font-size:11.5px; opacity:.8; margin-top:1px; }
 .dir { display:none; } .dir.active { display:block; }
 
+/* compare-all overview */
+.cmpwrap { margin-bottom:16px; }
+.cmp-title { font-size:12.5px; color:#667; margin-bottom:8px; }
+.cmpgrid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+@media(max-width:640px){ .cmpgrid { grid-template-columns:1fr; } }
+.cmp { background:#fff; border:1px solid #e4e7ec; border-radius:12px; padding:11px 13px; cursor:pointer; transition:.12s; }
+.cmp:hover { border-color:#1a53d0; }
+.cmp.active { border-color:#1a53d0; box-shadow:0 2px 8px rgba(26,83,208,.18); }
+.cmp-h { font-size:14.5px; }
+.cmp-air { font-size:11.5px; color:#8a93a0; letter-spacing:.5px; margin:1px 0 6px; }
+.cmp-body { font-size:12.8px; line-height:1.55; }
+.cmp-also { font-size:11.5px; color:#8a93a0; margin-top:4px; }
+.cmp-cost { margin-top:8px; font-weight:700; color:#0d7a4f; font-size:13.5px; }
+.cmp-cost span { font-weight:400; color:#8a93a0; font-size:11px; }
+.muted2 { color:#aab; }
+
 .routepick { display:flex; flex-wrap:wrap; gap:8px; margin:4px 0 16px; }
 .chip { padding:8px 14px; border-radius:20px; border:1px solid #d3d8e0; background:#fff; cursor:pointer; font-size:13.5px; font-weight:600; color:#3a4250; }
 .chip.active { background:#0d7a4f; color:#fff; border-color:#0d7a4f; }
@@ -129,6 +145,7 @@ footer { margin-top:26px; font-size:11.5px; color:#8a93a0; border-top:1px solid 
 
   <section class="dir active" id="dir-out">
     <div class="note"><b>Pick your routing.</b> Girona is closest and best in summer; Barcelona &amp; Birmingham tend to work better in the shoulder/winter season. Buffers assume you never want to risk the last onward connection; the cost is an indicative return per traveller.</div>
+    <div id="compare-out"></div>
     <div class="routepick" id="pick-out"></div>
     <div id="cost-out"></div>
     <div id="scan-out"></div>
@@ -137,6 +154,7 @@ footer { margin-top:26px; font-size:11.5px; color:#8a93a0; border-top:1px solid 
 
   <section class="dir" id="dir-home">
     <div class="note"><b>Coming home.</b> The risky link is the last airport bus/flight on the Spanish side and making check-in in time. Buffers assume a 2-hour airport check-in for Ryanair/Jet2.</div>
+    <div id="compare-home"></div>
     <div class="routepick" id="pick-home"></div>
     <div id="cost-home"></div>
     <div id="scan-home"></div>
@@ -244,6 +262,8 @@ const COMPOSE = {
 const SCHEDKEY = { gro_brs:'gro_brs',gro_bhx:'gro_bhx',bcn_brs:'bcn_brs',bcn_bhx:'bcn_bhx',
                    brs_gro:'gro_brs',bhx_gro:'gro_bhx',brs_bcn:'bcn_brs',bhx_bcn:'bcn_bhx' };
 const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const ROUTELABEL = { gro_brs:'Girona → Bristol', gro_bhx:'Girona → Birmingham', bcn_brs:'Barcelona → Bristol', bcn_bhx:'Barcelona → Birmingham',
+                     brs_gro:'Bristol → Girona', bhx_gro:'Birmingham → Girona', brs_bcn:'Bristol → Barcelona', bhx_bcn:'Birmingham → Barcelona' };
 
 // ---- links ----
 function ryanair(o,d,date){ return `https://www.ryanair.com/gb/en/trip/flights/select?adults=1&teenagers=0&children=0&infants=0&dateOut=${date}&originIata=${o}&destinationIata=${d}&isConnectedFlight=false&isReturn=false`; }
@@ -382,6 +402,43 @@ function renderScan(hostId, routeKey, side){
     ${rows}${alsoHtml}</div>`;
 }
 
+// ---- compare-all overview: every routing for the focus date at a glance ----
+function pickRoute(side, key){ state[side]=key; render(); }
+function renderCompare(hostId, side, order){
+  const host=document.getElementById(hostId); if(!host) return;
+  const focus = firstDateFor(side);
+  const dow = new Date(focus+"T00:00:00").getDay();
+  const dir = side==='out' ? 'su' : 'us';
+  const mult = triptype()==='oneway' ? 1 : 2; const word = mult===1?'o/w':'ret'; const p=pax();
+  const cards = order.map(key=>{
+    const [o,d]=IATA[key];
+    const svcs=(DATA.sched[SCHEDKEY[key]]||{})[dir]||[];
+    const timed=svcs.filter(s=>s.dep), others=svcs.filter(s=>!s.dep);
+    const flying=timed.filter(s=>s.days.includes(dow));
+    let body;
+    if(flying.length){
+      body = flying.map(s=>{ const fit=inWindow(s.dep);
+        const tg = fit===null?'' : (fit?' <span class="badge day">✓</span>':' <span class="badge off">⚠</span>');
+        return `${s.carrier} ${s.dep}${s.approx?'*':''}${tg}`; }).join('<br>');
+    } else if(others.length){
+      body = `<span class="muted2">no fixed-time flight this day</span>`;
+    } else {
+      body = `<span class="muted2">no flight on ${DOW[dow]}</span>`;
+    }
+    const also = others.length ? `<div class="cmp-also">also: ${others.map(s=>s.carrier).join(', ')}</div>` : '';
+    const c=costFor(key); const low=mult*(c.bus[0]+c.fl[0]+c.grnd[0]), high=mult*(c.bus[1]+c.fl[1]+c.grnd[1]);
+    return `<div class="cmp${state[side]===key?' active':''}" onclick="pickRoute('${side}','${key}')">
+      <div class="cmp-h"><b>${ROUTELABEL[key]}</b></div>
+      <div class="cmp-air">flight ${o} → ${d}</div>
+      <div class="cmp-body">${body}</div>${also}
+      <div class="cmp-cost">${gbp(low*p)}–${gbp(high*p)} <span>${word}${p>1?' · '+p+'p':''}</span></div>
+    </div>`;
+  }).join('');
+  host.innerHTML = `<div class="cmpwrap">
+    <div class="cmp-title">Compare all four — flights on <b>${niceDate(focus)}</b>${datemode()==='single'?'':' (first day of your range)'}. Tap one to see full legs &amp; options.</div>
+    <div class="cmpgrid">${cards}</div></div>`;
+}
+
 // ============================================================================
 // ROUTE DEFINITIONS
 // ============================================================================
@@ -464,8 +521,9 @@ function buf(html,cls){ return {html,cls:cls||''}; }
 // RENDER
 // ============================================================================
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "1.6";
+const VERSION = "1.7";
 const CHANGELOG = [
+  ["1.7","2026-08-11","Added a compare-all overview at the top of each direction: for your chosen date it shows all four routings at once — carriers, times, daytime fit and indicative cost — so you can compare without opening each. Tap a card to drill into full legs."],
   ["1.6","2026-08-11","Brought every carrier into scope: Barcelona–Bristol (easyJet, Ryanair) and Barcelona–Birmingham (Jet2, Vueling, easyJet, Ryanair). Fixed-time services show as dated rows; other carriers listed as 'also on this route' with per-carrier links."],
   ["1.5","2026-08-11","Tightened flight schedules (representative times + 'varies' notes); added visible version & history; weekly task now auto-refreshes schedules and both the sidebar and hosted copies."],
   ["1.4","2026-08-11","Schedule-aware Flight options list — shows only the days each route actually flies, with times, daytime fit, and per-day price links."],
@@ -494,8 +552,11 @@ function applyPrefsUI(){
 function render(){
   applyPrefsUI();
   document.getElementById('stamp').textContent = DATA.lastUpdated;
-  renderSide('out', outboundRoutes(),'pick-out','legs-out',['gro_brs','gro_bhx','bcn_brs','bcn_bhx']);
-  renderSide('home', homeboundRoutes(),'pick-home','legs-home',['brs_gro','bhx_gro','brs_bcn','bhx_bcn']);
+  const outOrder=['gro_brs','gro_bhx','bcn_brs','bcn_bhx'], homeOrder=['brs_gro','bhx_gro','brs_bcn','bhx_bcn'];
+  renderCompare('compare-out','out',outOrder);
+  renderCompare('compare-home','home',homeOrder);
+  renderSide('out', outboundRoutes(),'pick-out','legs-out',outOrder);
+  renderSide('home', homeboundRoutes(),'pick-home','legs-home',homeOrder);
   renderCost('cost-out', state.out); renderScan('scan-out', state.out,'out');
   renderCost('cost-home', state.home); renderScan('scan-home', state.home,'home');
   document.getElementById('ver').textContent = VERSION;
