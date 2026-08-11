@@ -3,6 +3,14 @@
 All notable changes to the Palafrugell ↔ Cheltenham Spa journey planner.
 Versions are also shown in-app (header badge + footer "Version history").
 
+## [2.1] — 2026-08-11
+- Flight links now open the live booking site **pre-filled with your date and
+  route** on the primary button (Ryanair natively; Skyscanner-by-date for
+  easyJet / Jet2 / Vueling), with a direct-to-airline link beside it.
+- Documented the limits: UK train sites can't be reliably date-linked (they use
+  non-public internal station IDs) and Moventis serves static PDF timetables, so
+  those links set the route/timetable but not a specific date.
+
 ## [2.0] — 2026-08-11
 - Pulled the real **Moventis bus timetables** from the official sources:
   Palafrugell ⇄ Girona (line E3, ~1h40) and Palafrugell ⇄ Barcelona Airport

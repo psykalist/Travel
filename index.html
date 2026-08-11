@@ -350,6 +350,10 @@ const CARRIER_URL = {
   Vueling:()=>"https://www.vueling.com/en"
 };
 function carrierLink(c,o,d,dt){ const f=CARRIER_URL[c]; return f?f(o,d,dt):sky(o,d,dt); }
+// a link that is ALWAYS pre-filled with the date + route (Ryanair native, else Skyscanner by date)
+function datedFlightLink(c,o,d,dt){ return c==='Ryanair' ? ryanair(o,d,dt) : sky(o,d,dt); }
+// carrier's own booking site (not date-filled) for direct booking
+const CARRIER_SITE = { Jet2:"https://www.jet2.com/en/cheap-flights", easyJet:"https://www.easyjet.com/en/cheap-flights", Vueling:"https://www.vueling.com/en" };
 // which IATA pair a routing flies (origin,dest by direction)
 const IATA = { gro_brs:["GRO","BRS"], gro_bhx:["GRO","BHX"], bcn_brs:["BCN","BRS"], bcn_bhx:["BCN","BHX"],
                brs_gro:["BRS","GRO"], bhx_gro:["BHX","GRO"], brs_bcn:["BRS","BCN"], bhx_bcn:["BHX","BCN"] };
@@ -477,13 +481,17 @@ function renderScan(hostId, routeKey, side){
           const fit = inWindow(s.dep);
           const tag = fit===null ? '' : (fit ? '<span class="badge day">✓ daytime</span>' : '<span class="badge off">⚠ early/late</span>');
           const star = s.approx ? '*' : '';
-          const priceHref = carrierLink(s.carrier,o,d,dt);
+          const dated = datedFlightLink(s.carrier,o,d,dt);
+          const site = CARRIER_SITE[s.carrier];
+          const secondary = site
+            ? `<a href="${site}" target="_blank" rel="noopener">${s.carrier} ↗</a>`
+            : `<a href="${sky(o,d,dt)}" target="_blank" rel="noopener">all airlines ↗</a>`;
           const note = s.note ? `<span class="svcnote"> — ${s.note}</span>` : '';
           const ai = arrivalInfo(d, s.arr);
           const arrLine = ai ? `<br><span class="arr ${ai.status}">→ ${ai.dest} ~${ai.finalStr}${ai.conn?' · '+ai.conn:''}</span>` : '';
           parts.push(`<div class="drow"><span class="d">${niceDate(dt)}</span>
             <span class="svc">${s.carrier}${s.no?' '+s.no:''} · ${s.dep}${star}→${s.arr}${star} ${tag}${note}${arrLine}</span>
-            <span><a href="${priceHref}" target="_blank" rel="noopener">price ↗</a> · <a href="${sky(o,d,dt)}" target="_blank" rel="noopener">all ↗</a></span></div>`);
+            <span><a href="${dated}" target="_blank" rel="noopener">fares · your date ↗</a> · ${secondary}</span></div>`);
         });
       }
     });
@@ -498,7 +506,7 @@ function renderScan(hostId, routeKey, side){
   const season = (svcs[0]||{}).season || '';
   host.innerHTML = `<div class="scan">
     <h3>Flight options — ${o} → ${d}</h3>
-    <p class="hint">Fixed-time services show per day${season?' · '+season:''}. <b>*</b> = approximate time. Other carriers on the route are listed below. Tap <b>price</b> for that carrier, <b>all</b> for every airline.</p>
+    <p class="hint">Fixed-time services show per day${season?' · '+season:''}. <b>*</b> = approximate time. <b>fares · your date</b> opens the live site pre-filled with your date &amp; route; the second link books direct with that airline. Other carriers on the route are listed below.</p>
     ${rows}${alsoHtml}</div>`;
 }
 
@@ -677,8 +685,9 @@ function renderBusTimes(){
 }
 
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "2.0";
+const VERSION = "2.1";
 const CHANGELOG = [
+  ["2.1","2026-08-11","Flight links now open the live site pre-filled with your date & route on the primary button (Ryanair native, Skyscanner-by-date for easyJet/Jet2/Vueling), with a direct-to-airline link alongside. Trains/buses can't be date-linked (rail sites use non-public station IDs; Moventis serves static PDFs)."],
   ["2.0","2026-08-11","Pulled the real Moventis bus timetables (Palafrugell ⇄ Girona line E3, and Palafrugell ⇄ Barcelona airport line 1) into a collapsible panel with source links; off-season Mon–Fri, refreshed with the flights. Warmer coloured theme with a gradient background and hero header."],
   ["1.9","2026-08-11","Usability pack: per-flight door-to-door arrival time in Cheltenham/Palafrugell with a green/amber/red last-connection check; door-to-door journey time on each routing; sort options by cheapest/fastest/earliest arrival; remembers your settings and supports shareable URLs; sticky date bar and bigger tap targets on mobile."],
   ["1.8","2026-08-11","Progressive disclosure: selecting a routing hides the others and shows only that route's flights, transfers and cost, with a 'Compare all four' back button. The cheapest routing (on typical fares) is highlighted green as a good-value option."],
