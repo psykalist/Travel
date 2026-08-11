@@ -44,6 +44,12 @@ h1 { font-size:22px; margin:0 0 2px; letter-spacing:-0.2px; }
 .cmp-cost { margin-top:8px; font-weight:700; color:#0d7a4f; font-size:13.5px; }
 .cmp-cost span { font-weight:400; color:#8a93a0; font-size:11px; }
 .muted2 { color:#aab; }
+.cmp.good { border-color:#0d7a4f; box-shadow:0 2px 8px rgba(13,122,79,.18); }
+.cmp.muted { opacity:.55; }
+.cmp.selected { cursor:default; opacity:1; }
+.goodbadge { background:#0d7a4f; color:#fff; border-radius:6px; padding:1px 7px; font-size:10.5px; font-weight:700; vertical-align:middle; }
+.backbtn { background:#fff; border:1px solid #cfd4dc; border-radius:9px; padding:7px 12px; font:inherit; font-size:13px; font-weight:600; color:#1a53d0; cursor:pointer; }
+.backbtn:hover { border-color:#1a53d0; }
 
 .routepick { display:flex; flex-wrap:wrap; gap:8px; margin:4px 0 16px; }
 .chip { padding:8px 14px; border-radius:20px; border:1px solid #d3d8e0; background:#fff; cursor:pointer; font-size:13.5px; font-weight:600; color:#3a4250; }
@@ -402,40 +408,67 @@ function renderScan(hostId, routeKey, side){
     ${rows}${alsoHtml}</div>`;
 }
 
-// ---- compare-all overview: every routing for the focus date at a glance ----
-function pickRoute(side, key){ state[side]=key; render(); }
+// ---- compare-all overview + progressive disclosure ----
+function pickRoute(side, key){ state[side]=key; state['focused_'+side]=true; render(); }
+function unfocus(side){ state['focused_'+side]=false; render(); }
+function groundDesc(key){ return /brs/.test(key) ? 'Airport Flyer + train to Cheltenham' : 'train via New Street to Cheltenham'; }
+function routeLowHigh(key, mult){ const c=costFor(key); return [mult*(c.bus[0]+c.fl[0]+c.grnd[0]), mult*(c.bus[1]+c.fl[1]+c.grnd[1])]; }
+
 function renderCompare(hostId, side, order){
   const host=document.getElementById(hostId); if(!host) return;
+  const focused = state['focused_'+side];
+  const mult = triptype()==='oneway' ? 1 : 2; const word = mult===1?'o/w':'ret'; const p=pax();
+
+  // FOCUSED: show only a back bar + the selected route summary; details render below.
+  if(focused){
+    const key=state[side]; const [o,d]=IATA[key];
+    const lh=routeLowHigh(key,mult);
+    host.innerHTML = `<div class="cmpwrap">
+      <button class="backbtn" onclick="unfocus('${side}')">← Compare all four</button>
+      <div class="cmp selected active" style="margin-top:8px">
+        <div class="cmp-h"><b>${ROUTELABEL[key]}</b></div>
+        <div class="cmp-air">flight ${o} → ${d} · then ${groundDesc(key)}</div>
+        <div class="cmp-cost">${gbp(lh[0]*p)}–${gbp(lh[1]*p)} <span>${word}${p>1?' · '+p+'p':''} · typical</span></div>
+      </div></div>`;
+    return;
+  }
+
+  // OVERVIEW: all four routings; cheapest (by typical fare) flagged green.
   const focus = firstDateFor(side);
   const dow = new Date(focus+"T00:00:00").getDay();
   const dir = side==='out' ? 'su' : 'us';
-  const mult = triptype()==='oneway' ? 1 : 2; const word = mult===1?'o/w':'ret'; const p=pax();
-  const cards = order.map(key=>{
+  // precompute each routing's flights + cost, so "cheapest" is judged only among routes that fly today
+  const info = order.map(key=>{
     const [o,d]=IATA[key];
     const svcs=(DATA.sched[SCHEDKEY[key]]||{})[dir]||[];
     const timed=svcs.filter(s=>s.dep), others=svcs.filter(s=>!s.dep);
     const flying=timed.filter(s=>s.days.includes(dow));
+    const flies = flying.length>0 || others.length>0;
+    const lh=routeLowHigh(key,mult);
+    return {key,o,d,flying,others,flies,lh};
+  });
+  const flyingLows = info.filter(x=>x.flies).map(x=>x.lh[0]);
+  const minLow = flyingLows.length ? Math.min(...flyingLows) : Infinity;
+  const cards = info.map(x=>{
     let body;
-    if(flying.length){
-      body = flying.map(s=>{ const fit=inWindow(s.dep);
+    if(x.flying.length){
+      body = x.flying.map(s=>{ const fit=inWindow(s.dep);
         const tg = fit===null?'' : (fit?' <span class="badge day">✓</span>':' <span class="badge off">⚠</span>');
         return `${s.carrier} ${s.dep}${s.approx?'*':''}${tg}`; }).join('<br>');
-    } else if(others.length){
-      body = `<span class="muted2">no fixed-time flight this day</span>`;
-    } else {
-      body = `<span class="muted2">no flight on ${DOW[dow]}</span>`;
-    }
-    const also = others.length ? `<div class="cmp-also">also: ${others.map(s=>s.carrier).join(', ')}</div>` : '';
-    const c=costFor(key); const low=mult*(c.bus[0]+c.fl[0]+c.grnd[0]), high=mult*(c.bus[1]+c.fl[1]+c.grnd[1]);
-    return `<div class="cmp${state[side]===key?' active':''}" onclick="pickRoute('${side}','${key}')">
-      <div class="cmp-h"><b>${ROUTELABEL[key]}</b></div>
-      <div class="cmp-air">flight ${o} → ${d}</div>
+    } else if(x.others.length){ body = `<span class="muted2">no fixed-time flight this day</span>`; }
+    else { body = `<span class="muted2">no flight on ${DOW[dow]}</span>`; }
+    const also = x.others.length ? `<div class="cmp-also">also: ${x.others.map(s=>s.carrier).join(', ')}</div>` : '';
+    const good = x.flies && x.lh[0] <= minLow*1.05;
+    const badge = good ? `<span class="goodbadge">✓ Good value</span>` : '';
+    return `<div class="cmp${good?' good':''}${x.flies?'':' muted'}" onclick="pickRoute('${side}','${x.key}')">
+      <div class="cmp-h"><b>${ROUTELABEL[x.key]}</b> ${badge}</div>
+      <div class="cmp-air">flight ${x.o} → ${x.d}</div>
       <div class="cmp-body">${body}</div>${also}
-      <div class="cmp-cost">${gbp(low*p)}–${gbp(high*p)} <span>${word}${p>1?' · '+p+'p':''}</span></div>
+      <div class="cmp-cost">${gbp(x.lh[0]*p)}–${gbp(x.lh[1]*p)} <span>${word}${p>1?' · '+p+'p':''}</span></div>
     </div>`;
   }).join('');
   host.innerHTML = `<div class="cmpwrap">
-    <div class="cmp-title">Compare all four — flights on <b>${niceDate(focus)}</b>${datemode()==='single'?'':' (first day of your range)'}. Tap one to see full legs &amp; options.</div>
+    <div class="cmp-title">Compare all four — flights on <b>${niceDate(focus)}</b>${datemode()==='single'?'':' (first day of your range)'}. Tap one to see just its transfers &amp; options. <span style="color:#0d7a4f">Green = cheapest on typical fares</span> (confirm with live prices).</div>
     <div class="cmpgrid">${cards}</div></div>`;
 }
 
@@ -521,8 +554,9 @@ function buf(html,cls){ return {html,cls:cls||''}; }
 // RENDER
 // ============================================================================
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "1.7";
+const VERSION = "1.8";
 const CHANGELOG = [
+  ["1.8","2026-08-11","Progressive disclosure: selecting a routing hides the others and shows only that route's flights, transfers and cost, with a 'Compare all four' back button. The cheapest routing (on typical fares) is highlighted green as a good-value option."],
   ["1.7","2026-08-11","Added a compare-all overview at the top of each direction: for your chosen date it shows all four routings at once — carriers, times, daytime fit and indicative cost — so you can compare without opening each. Tap a card to drill into full legs."],
   ["1.6","2026-08-11","Brought every carrier into scope: Barcelona–Bristol (easyJet, Ryanair) and Barcelona–Birmingham (Jet2, Vueling, easyJet, Ryanair). Fixed-time services show as dated rows; other carriers listed as 'also on this route' with per-carrier links."],
   ["1.5","2026-08-11","Tightened flight schedules (representative times + 'varies' notes); added visible version & history; weekly task now auto-refreshes schedules and both the sidebar and hosted copies."],
@@ -559,6 +593,12 @@ function render(){
   renderSide('home', homeboundRoutes(),'pick-home','legs-home',homeOrder);
   renderCost('cost-out', state.out); renderScan('scan-out', state.out,'out');
   renderCost('cost-home', state.home); renderScan('scan-home', state.home,'home');
+  // progressive disclosure: chips replaced by the compare cards; details only once a route is picked
+  ['out','home'].forEach(side=>{
+    const f=state['focused_'+side];
+    document.getElementById('pick-'+side).style.display='none';
+    ['cost-'+side,'scan-'+side,'legs-'+side].forEach(id=>{ const e=document.getElementById(id); if(e) e.style.display=f?'':'none'; });
+  });
   document.getElementById('ver').textContent = VERSION;
   const clog = CHANGELOG.map(c=>`<li><b>v${c[0]}</b> <span style="color:#aab">${c[1]}</span> — ${c[2]}</li>`).join('');
   document.getElementById('foot').innerHTML =

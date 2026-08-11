@@ -3,6 +3,15 @@
 All notable changes to the Palafrugell ↔ Cheltenham Spa journey planner.
 Versions are also shown in-app (header badge + footer "Version history").
 
+## [1.8] — 2026-08-11
+- Progressive disclosure. Selecting a routing from the compare panel now hides
+  the other three and shows only that route's flights, transfers (Airport Flyer
+  + train, or train via New Street) and cost, with a "Compare all four" back
+  button. Reduces on-screen clutter to just what's relevant.
+- The cheapest routing that actually flies your chosen date is highlighted
+  **green** with a "Good value" badge (based on typical fares — confirm with the
+  live price links). Routings with no flight that day are greyed out.
+
 ## [1.7] — 2026-08-11
 - Added a **compare-all overview** at the top of each direction. Pick a date and
   it shows all four routings side by side — which carriers fly that day, their
