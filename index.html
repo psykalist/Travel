@@ -440,7 +440,8 @@ const HOP = {
   BCN:{deplane:45,toStation:5,wait:20,train:140,lastDep:"23:25",dest:"Palafrugell",mode:"coach"}
 };
 const BUSMIN = { bus_pgl_gro:65, bus_pgl_bcn:140 };
-const FLIGHTMIN = { gro_brs:120, gro_bhx:125, bcn_brs:120, bcn_bhx:135 };
+const FLIGHTMIN = { gro_brs:120, gro_bhx:125, bcn_brs:120, bcn_bhx:135 };  // all DIRECT, ≤3h
+const MAX_FLIGHT_MINS = 180;  // rule: only direct flights up to 3 hours are shown
 function toMin(s){ if(!s) return null; const p=s.split(':'); return (+p[0])*60+(+p[1]); }
 function fromMin(m){ const day=Math.floor(m/1440); const x=((m%1440)+1440)%1440;
   return String(Math.floor(x/60)).padStart(2,'0')+':'+String(x%60).padStart(2,'0')+(day>0?' +'+day+'d':''); }
@@ -500,10 +501,15 @@ function renderScan(hostId, routeKey, side){
   const [o,d] = IATA[routeKey];                 // flight direction for this tab
   const dates = datesForSide(side);
   const dir = side==='out' ? 'su' : 'us';       // Spain→UK vs UK→Spain
+  const host=document.getElementById(hostId);
+  const flMin = FLIGHTMIN[SCHEDKEY[routeKey]] || 0;   // rule: direct flights ≤3h only
+  if(flMin > MAX_FLIGHT_MINS){
+    host.innerHTML = `<div class="scan"><h3>Flight options — ${o} → ${d}</h3><p class="hint">This route exceeds the 3-hour direct-flight limit, so it isn't shown.</p></div>`;
+    return;
+  }
   const svcs = (DATA.sched[SCHEDKEY[routeKey]] || {})[dir] || [];
   const timed = svcs.filter(s=>s.dep);   // fixed-time services (dated rows)
   const others = svcs.filter(s=>!s.dep); // carriers whose times vary daily
-  const host=document.getElementById(hostId);
   const single = datemode()==='single';
   let rows;
   if(!dates.length){
@@ -548,7 +554,7 @@ function renderScan(hostId, routeKey, side){
   const season = (svcs[0]||{}).season || '';
   host.innerHTML = `<div class="scan">
     <h3>Flight options — ${o} → ${d}</h3>
-    <p class="hint">Fixed-time services show per day${season?' · '+season:''}. <b>*</b> = approximate time. <b>fares · your date</b> opens the live site pre-filled with your date &amp; route; the second link books direct with that airline. Other carriers on the route are listed below.</p>
+    <p class="hint"><b>Direct flights only, ≤3h.</b> Fixed-time services show per day${season?' · '+season:''}. <b>*</b> = approximate time. <b>fares · your date</b> opens the live site pre-filled with your date &amp; route; the second link books direct with that airline. Other carriers on the route are listed below.</p>
     ${rows}${alsoHtml}</div>`;
 }
 
@@ -752,14 +758,15 @@ function renderAdmin(){
   const need=DATA.sources.filter(s=>{const k=srcStatus(s).k;return k==='expired'||k==='soon';}).length;
   const summary = need ? `<span class="ad-flag">${need} source${need>1?'s':''} need attention</span>` : `<span class="ad-ok">all sources current</span>`;
   host.innerHTML = `<details class="adwrap"><summary>🛠 Admin — data sources &amp; expiry ${summary}</summary>
-    <p class="ad-help">Each static timetable is stored with the validity dates printed on it. The weekly task re-checks these and re-pulls anything expired or expiring. Colours: <b style="color:#0d7a4f">ok</b> · <b style="color:#b26a00">expiring &le;30d</b> · <b style="color:#c62828">expired</b>.</p>
+    <p class="ad-help">Each static timetable is stored with the validity dates printed on it. <b>Refresh policy:</b> the weekly task leaves a source untouched while it's still valid, and only re-pulls it once it's within ~14 days of expiry (or already expired). When it succeeds it records the new sheet's expiry, which gates the next attempt — so most weeks it does nothing. Colours: <b style="color:#0d7a4f">ok</b> · <b style="color:#b26a00">due / expiring &le;30d</b> · <b style="color:#c62828">expired</b>.</p>
     <table class="adtable"><thead><tr><th>Timetable / data</th><th>Status</th><th>Validity</th><th>Notes</th><th></th></tr></thead><tbody>${rows}</tbody></table>
   </details>`;
 }
 
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "2.2";
+const VERSION = "2.3";
 const CHANGELOG = [
+  ["2.3","2026-08-11","Refresh policy: the weekly task now leaves a source alone while valid and only re-pulls it within ~14 days of expiry (documented in the Admin panel). Enforced a direct-flights-only, ≤3h rule across the app and the weekly task."],
   ["2.2","2026-08-11","Added a data-source registry with each static timetable's printed validity/expiry, and an Admin panel that flags OK / expiring-soon / expired so the weekly script knows what to re-pull. (Immediately flags the off-season Girona/Barcelona bus sheets as expired — summer timetables need pulling.)"],
   ["2.1","2026-08-11","Flight links now open the live site pre-filled with your date & route on the primary button (Ryanair native, Skyscanner-by-date for easyJet/Jet2/Vueling), with a direct-to-airline link alongside. Trains/buses can't be date-linked (rail sites use non-public station IDs; Moventis serves static PDFs)."],
   ["2.0","2026-08-11","Pulled the real Moventis bus timetables (Palafrugell ⇄ Girona line E3, and Palafrugell ⇄ Barcelona airport line 1) into a collapsible panel with source links; off-season Mon–Fri, refreshed with the flights. Warmer coloured theme with a gradient background and hero header."],

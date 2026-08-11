@@ -3,6 +3,15 @@
 All notable changes to the Palafrugell ↔ Cheltenham Spa journey planner.
 Versions are also shown in-app (header badge + footer "Version history").
 
+## [2.3] — 2026-08-11
+- **Expiry-gated refresh policy.** The weekly task now leaves a source untouched
+  while it's still valid and only re-pulls it within ~14 days of its printed
+  expiry (or once expired); on success it records the new expiry, which gates the
+  next attempt. Documented in the Admin panel — most weeks the task does nothing.
+- **Direct flights only, ≤3 hours** — enforced in the app (routes over 3h are
+  hidden) and in the weekly task (never stores connecting or >3h flights). All
+  four routings already qualify (~2h–2h15).
+
 ## [2.2] — 2026-08-11
 - Added a **data-source registry**: every static timetable (Airport Flyer,
   Moventis buses, flight seasons, UK rail, FX) is stored with the validity/expiry
