@@ -59,7 +59,9 @@ h1 { font-size:22px; margin:0 0 2px; letter-spacing:-0.2px; }
 .cmp.active { border-color:#1a53d0; box-shadow:0 3px 12px rgba(26,83,208,.2); }
 .cmp-h { font-size:15.5px; font-weight:700; }
 .cmp-air { font-size:11.5px; color:#8a93a0; letter-spacing:.5px; margin:1px 0 6px; }
-.cmp-body { font-size:12.8px; line-height:1.55; }
+.cmp-body { font-size:12.8px; line-height:1.7; }
+.cmpflight { display:inline-flex; align-items:center; white-space:nowrap; margin:1px 8px 1px 0; }
+.cmptime { font-variant-numeric:tabular-nums; }
 .cmp-also { font-size:11.5px; color:#8a93a0; margin-top:4px; }
 .cmp-cost { margin-top:8px; font-weight:700; color:#0d7a4f; font-size:13.5px; }
 .cmp-cost span { font-weight:400; color:#8a93a0; font-size:11px; }
@@ -731,16 +733,16 @@ function renderCompare(hostId, side, order){
     if(x.flying.length){
       body = x.flying.map(s=>{ const fit=inWindow(s.dep);
         const tg = fit===null?'' : (fit?' <span class="badge day">✓</span>':' <span class="badge off">⚠</span>');
-        return `${carrierBadge(s.carrier)} ${s.dep}${s.approx?'*':''}${tg}`; }).join('<br>');
+        return `<span class="cmpflight">${carrierBadge(s.carrier)}<span class="cmptime">${s.dep}${s.approx?'*':''}${tg}</span></span>`; }).join('');
     } else if(x.others.length){ body = `<span class="muted2">no fixed-time flight this day</span>`; }
     else { body = `<span class="muted2">no flight on ${DOW[dow]}</span>`; }
-    const also = x.others.length ? `<div class="cmp-also">also: ${x.others.map(s=>carrierBadge(s.carrier)).join(' ')}</div>` : '';
+    const also = x.others.length ? `<div class="cmp-also">${x.others.map(s=>carrierBadge(s.carrier)).join(' ')}</div>` : '';
     const arrLine = x.repAi ? `<div class="arr ${x.repAi.status}">→ ${x.repAi.dest} ~${x.repAi.finalStr}${x.repAi.conn?' · '+x.repAi.conn:''}</div>` : '';
     const good = x.flies && x.lh[0] <= minLow*1.05;
     const badge = good ? `<span class="goodbadge">✓ Good value</span>` : '';
     return `<div class="cmp${good?' good':''}${x.flies?'':' muted'}" onclick="pickRoute('${side}','${x.key}')">
       <div class="cmp-h"><b>${ROUTELABEL[x.key]}</b> ${badge}</div>
-      <div class="cmp-air">flight ${x.o} → ${x.d} · ~${fmtDur(x.tmins)} door-to-door</div>
+      <div class="cmp-air">${x.o} → ${x.d} · ~${fmtDur(x.tmins)}</div>
       <div class="cmp-body">${body}</div>${arrLine}${also}
       <div class="cmp-cost">${gbp(x.lh[0]*p)}–${gbp(x.lh[1]*p)} <span>${word}${p>1?' · '+p+'p':''}</span></div>
     </div>`;
