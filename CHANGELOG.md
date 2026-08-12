@@ -7,9 +7,10 @@ Versions are also shown in-app (header badge + footer "Version history").
 - Colour tuning: darker blue page background, reddish-pastel preferences bar,
   pale-yellow action buttons, airline names in dark blue, and "no flights" text
   in red.
-- Added brand-coloured **carrier badges** (FR / U2 / LS / VY) beside each airline
-  as lightweight stand-ins for logos — real airline logos are copyrighted and
-  unreliable to hotlink, so these mini brand chips do the same job.
+- Airlines now show as brand-coloured **wordmark chips** — the airline name set
+  in its brand colours (Ryanair navy/yellow, easyJet orange, Jet2 red, Vueling
+  yellow), aligned to the row height. These are self-contained logo stand-ins;
+  real airline logos are copyrighted and can't be hotlinked in the sandbox.
 
 ## [2.5] — 2026-08-12
 - UI refresh aimed at fitting the initial choices on one screen: pastel-blue

@@ -120,8 +120,8 @@ h1 { font-size:22px; margin:0 0 2px; letter-spacing:-0.2px; }
 .drow .svc { flex:1 1 200px; font-size:12.5px; color:#333; }
 .drow .noflight { font-size:12px; color:#c62828; font-weight:600; }
 .drow .svcnote { color:#8a93a0; font-size:11.5px; }
-.carrier { color:#0b3a8c; font-weight:700; }
-.cbadge { display:inline-block; min-width:22px; text-align:center; border-radius:5px; padding:1px 5px; font-size:10.5px; font-weight:800; letter-spacing:.3px; margin-right:5px; vertical-align:middle; }
+.carrier { color:#0b3a8c; font-weight:700; font-size:13px; line-height:19px; vertical-align:middle; }
+.cbadge { display:inline-flex; align-items:center; justify-content:center; height:20px; border-radius:5px; padding:0 9px; font-size:12px; font-weight:800; letter-spacing:.2px; margin-right:6px; vertical-align:middle; box-shadow:0 1px 2px rgba(0,0,0,.12); }
 .also { margin-top:10px; font-size:12.5px; color:#455; background:#eef4ff; border:1px solid #d3e0f7; border-radius:8px; padding:8px 11px; }
 .also a { color:#1a53d0; text-decoration:none; font-weight:600; }
 .drow a { text-decoration:none; color:#1a53d0; font-weight:600; font-size:12.5px; }
@@ -428,9 +428,9 @@ function carrierLink(c,o,d,dt){ const f=CARRIER_URL[c]; return f?f(o,d,dt):sky(o
 function datedFlightLink(c,o,d,dt){ return c==='Ryanair' ? ryanair(o,d,dt) : sky(o,d,dt); }
 // carrier's own booking site (not date-filled) for direct booking
 const CARRIER_SITE = { Jet2:"https://www.jet2.com/en/cheap-flights", easyJet:"https://www.easyjet.com/en/cheap-flights", Vueling:"https://www.vueling.com/en" };
-// brand-coloured mini-badges (IATA code) — stand in for airline logos (real logos are copyrighted)
-const CARRIER_BADGE = { Ryanair:['FR','#073590','#f1c933'], easyJet:['U2','#ff6600','#ffffff'], Jet2:['LS','#e4002b','#ffffff'], Vueling:['VY','#ffcc00','#20303a'] };
-function carrierBadge(name){ const b=CARRIER_BADGE[name]; return b?`<span class="cbadge" style="background:${b[1]};color:${b[2]}">${b[0]}</span>`:''; }
+// brand-coloured wordmark chips — self-contained stand-ins for airline logos (real logos are copyrighted / can't be hotlinked in the sandbox)
+const CARRIER_BADGE = { Ryanair:['Ryanair','#073590','#f1c933'], easyJet:['easyJet','#ff6600','#ffffff'], Jet2:['Jet2','#e4002b','#ffffff'], Vueling:['Vueling','#ffcc00','#20303a'] };
+function carrierBadge(name){ const b=CARRIER_BADGE[name]; return b?`<span class="cbadge" style="background:${b[1]};color:${b[2]}">${b[0]}</span>`:`<span class="carrier">${name}</span>`; }
 // which IATA pair a routing flies (origin,dest by direction)
 const IATA = { gro_brs:["GRO","BRS"], gro_bhx:["GRO","BHX"], bcn_brs:["BCN","BRS"], bcn_bhx:["BCN","BHX"],
                brs_gro:["BRS","GRO"], bhx_gro:["BHX","GRO"], brs_bcn:["BRS","BCN"], bhx_bcn:["BHX","BCN"] };
@@ -573,7 +573,7 @@ function renderScan(hostId, routeKey, side){
           const ai = arrivalInfo(d, s.arr);
           const arrLine = ai ? `<br><span class="arr ${ai.status}">→ ${ai.dest} ~${ai.finalStr}${ai.conn?' · '+ai.conn:''}</span>` : '';
           parts.push(`<div class="drow"><span class="d">${niceDate(dt)}</span>
-            <span class="svc">${carrierBadge(s.carrier)}<span class="carrier">${s.carrier}</span>${s.no?' '+s.no:''} · ${s.dep}${star}→${s.arr}${star} ${tag}${note}${arrLine}</span>
+            <span class="svc">${carrierBadge(s.carrier)}${s.no?' '+s.no:''} · ${s.dep}${star}→${s.arr}${star} ${tag}${note}${arrLine}</span>
             <span><a href="#" onclick="planItinerary('${side}','${routeKey}','${dt}','${s.carrier}','${s.dep}','${s.arr}','${s.no||''}');return false;" class="planlink">plan this →</a> · <a href="${dated}" target="_blank" rel="noopener">fares ↗</a> · ${secondary}</span></div>`);
         });
       }
@@ -731,10 +731,10 @@ function renderCompare(hostId, side, order){
     if(x.flying.length){
       body = x.flying.map(s=>{ const fit=inWindow(s.dep);
         const tg = fit===null?'' : (fit?' <span class="badge day">✓</span>':' <span class="badge off">⚠</span>');
-        return `${carrierBadge(s.carrier)}<span class="carrier">${s.carrier}</span> ${s.dep}${s.approx?'*':''}${tg}`; }).join('<br>');
+        return `${carrierBadge(s.carrier)} ${s.dep}${s.approx?'*':''}${tg}`; }).join('<br>');
     } else if(x.others.length){ body = `<span class="muted2">no fixed-time flight this day</span>`; }
     else { body = `<span class="muted2">no flight on ${DOW[dow]}</span>`; }
-    const also = x.others.length ? `<div class="cmp-also">also: ${x.others.map(s=>carrierBadge(s.carrier)+'<span class="carrier">'+s.carrier+'</span>').join(' ')}</div>` : '';
+    const also = x.others.length ? `<div class="cmp-also">also: ${x.others.map(s=>carrierBadge(s.carrier)).join(' ')}</div>` : '';
     const arrLine = x.repAi ? `<div class="arr ${x.repAi.status}">→ ${x.repAi.dest} ~${x.repAi.finalStr}${x.repAi.conn?' · '+x.repAi.conn:''}</div>` : '';
     const good = x.flies && x.lh[0] <= minLow*1.05;
     const badge = good ? `<span class="goodbadge">✓ Good value</span>` : '';
@@ -884,7 +884,7 @@ function renderAdmin(){
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
 const VERSION = "2.6";
 const CHANGELOG = [
-  ["2.6","2026-08-12","Colour tuning: darker blue page background, reddish-pastel preferences bar, pale-yellow buttons, airline names in dark blue, and 'no flights' text in red. Added brand-coloured carrier badges (FR/U2/LS/VY) as lightweight stand-ins for airline logos."],
+  ["2.6","2026-08-12","Colour tuning: darker blue page background, reddish-pastel preferences bar, pale-yellow buttons, and 'no flights' text in red. Airlines now show as brand-coloured wordmark chips (Ryanair navy/yellow, easyJet orange, Jet2 red, Vueling yellow) — self-contained logo stand-ins, aligned to the row height."],
   ["2.5","2026-08-12","UI refresh: pastel-blue theme (less white), CT circle logo/favicon, the intro banner collapsed behind a small ? at top-right, a bolder green 'plan this' button, the four routings as large 2-per-row buttons, and a more compact prefs bar so all the initial choices fit on one screen."],
   ["2.4","2026-08-12","Itinerary generator: tap 'plan this' on any flight to get a full door-to-door plan — coach to the airport, flight, Airport Flyer/Air-Rail, trains and coach home — with computed times, buffers, last-connection warnings, links, and a Copy button."],
   ["2.3","2026-08-11","Refresh policy: the weekly task now leaves a source alone while valid and only re-pulls it within ~14 days of expiry (documented in the Admin panel). Enforced a direct-flights-only, ≤3h rule across the app and the weekly task."],
