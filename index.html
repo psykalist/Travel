@@ -8,7 +8,7 @@
 <style>
 :root { color-scheme: light; }
 * { box-sizing: border-box; }
-body { margin:0; background:linear-gradient(180deg,#cfe0f7 0%, #dceafb 55%, #e6f0fd 100%); background-attachment:fixed; color:#1c1e21; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; line-height:1.45; font-size:15px; }
+body { margin:0; background:linear-gradient(180deg,#7ea6d8 0%, #93b6e2 55%, #a7c5ea 100%); background-attachment:fixed; color:#1c1e21; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; line-height:1.45; font-size:15px; }
 .wrap { max-width:1080px; margin:0 auto; padding:14px 18px 60px; }
 .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
 .brand { display:flex; align-items:center; gap:10px; }
@@ -23,7 +23,7 @@ h1 { font-size:22px; margin:0 0 2px; letter-spacing:-0.2px; }
 .stamp { background:#eef1f6; border-radius:20px; padding:4px 12px; font-size:12.5px; color:#667; display:inline-block; margin-bottom:14px; }
 
 /* preferences panel */
-.prefs { background:#f4f8ff; border:1px solid #d3e0f7; border-radius:14px; padding:10px 14px; margin-bottom:14px; position:sticky; top:0; z-index:30; box-shadow:0 2px 10px rgba(26,83,208,.06); }
+.prefs { background:#fbe7e4; border:1px solid #f0cbc4; border-radius:14px; padding:10px 14px; margin-bottom:14px; position:sticky; top:0; z-index:30; box-shadow:0 2px 10px rgba(180,80,70,.10); }
 .prefs h2 { margin:0 0 8px; }
 .prow { gap:10px 16px; }
 @media(max-width:640px){
@@ -63,7 +63,7 @@ h1 { font-size:22px; margin:0 0 2px; letter-spacing:-0.2px; }
 .cmp-also { font-size:11.5px; color:#8a93a0; margin-top:4px; }
 .cmp-cost { margin-top:8px; font-weight:700; color:#0d7a4f; font-size:13.5px; }
 .cmp-cost span { font-weight:400; color:#8a93a0; font-size:11px; }
-.muted2 { color:#aab; }
+.muted2 { color:#c62828; font-weight:600; }
 .cmp.good { border-color:#0d7a4f; box-shadow:0 2px 8px rgba(13,122,79,.18); }
 .cmp.muted { opacity:.55; }
 .cmp.selected { cursor:default; opacity:1; }
@@ -118,8 +118,10 @@ h1 { font-size:22px; margin:0 0 2px; letter-spacing:-0.2px; }
 .drow.muted { opacity:.5; }
 .drow .d { font-weight:600; min-width:96px; }
 .drow .svc { flex:1 1 200px; font-size:12.5px; color:#333; }
-.drow .noflight { font-size:12px; color:#98a; }
+.drow .noflight { font-size:12px; color:#c62828; font-weight:600; }
 .drow .svcnote { color:#8a93a0; font-size:11.5px; }
+.carrier { color:#0b3a8c; font-weight:700; }
+.cbadge { display:inline-block; min-width:22px; text-align:center; border-radius:5px; padding:1px 5px; font-size:10.5px; font-weight:800; letter-spacing:.3px; margin-right:5px; vertical-align:middle; }
 .also { margin-top:10px; font-size:12.5px; color:#455; background:#eef4ff; border:1px solid #d3e0f7; border-radius:8px; padding:8px 11px; }
 .also a { color:#1a53d0; text-decoration:none; font-weight:600; }
 .drow a { text-decoration:none; color:#1a53d0; font-weight:600; font-size:12.5px; }
@@ -137,9 +139,9 @@ h1 { font-size:22px; margin:0 0 2px; letter-spacing:-0.2px; }
 .badge.day { background:#e3f5ea; color:#0d7a4f; }
 .badge.off { background:#fbe7e7; color:#b23; }
 .links { display:flex; flex-wrap:wrap; gap:8px; }
-.btn { display:inline-flex; align-items:center; gap:6px; text-decoration:none; font-size:13px; font-weight:600; padding:7px 13px; border-radius:9px; background:#1a53d0; color:#fff; }
-.btn.alt { background:#fff; color:#1a53d0; border:1px solid #b9c6ea; }
-.btn:hover { filter:brightness(1.06); }
+.btn { display:inline-flex; align-items:center; gap:6px; text-decoration:none; font-size:13px; font-weight:700; padding:7px 13px; border-radius:9px; background:#fbf1a8; color:#5a4a00; border:1px solid #ecdd7e; }
+.btn.alt { background:#fdf8d4; color:#5a4a00; border:1px solid #ecdd7e; }
+.btn:hover { filter:brightness(1.03); }
 .connector { text-align:center; color:#9aa3b0; font-size:20px; line-height:1; margin:-4px 0; }
 .buffer { margin-top:10px; background:#fff8e8; border:1px solid #f2e0b0; border-radius:10px; padding:9px 12px; font-size:12.8px; color:#7a5b12; }
 .buffer.warn { background:#fdecec; border-color:#f3bcbc; color:#8f2020; }
@@ -426,6 +428,9 @@ function carrierLink(c,o,d,dt){ const f=CARRIER_URL[c]; return f?f(o,d,dt):sky(o
 function datedFlightLink(c,o,d,dt){ return c==='Ryanair' ? ryanair(o,d,dt) : sky(o,d,dt); }
 // carrier's own booking site (not date-filled) for direct booking
 const CARRIER_SITE = { Jet2:"https://www.jet2.com/en/cheap-flights", easyJet:"https://www.easyjet.com/en/cheap-flights", Vueling:"https://www.vueling.com/en" };
+// brand-coloured mini-badges (IATA code) — stand in for airline logos (real logos are copyrighted)
+const CARRIER_BADGE = { Ryanair:['FR','#073590','#f1c933'], easyJet:['U2','#ff6600','#ffffff'], Jet2:['LS','#e4002b','#ffffff'], Vueling:['VY','#ffcc00','#20303a'] };
+function carrierBadge(name){ const b=CARRIER_BADGE[name]; return b?`<span class="cbadge" style="background:${b[1]};color:${b[2]}">${b[0]}</span>`:''; }
 // which IATA pair a routing flies (origin,dest by direction)
 const IATA = { gro_brs:["GRO","BRS"], gro_bhx:["GRO","BHX"], bcn_brs:["BCN","BRS"], bcn_bhx:["BCN","BHX"],
                brs_gro:["BRS","GRO"], bhx_gro:["BHX","GRO"], brs_bcn:["BRS","BCN"], bhx_bcn:["BHX","BCN"] };
@@ -568,7 +573,7 @@ function renderScan(hostId, routeKey, side){
           const ai = arrivalInfo(d, s.arr);
           const arrLine = ai ? `<br><span class="arr ${ai.status}">→ ${ai.dest} ~${ai.finalStr}${ai.conn?' · '+ai.conn:''}</span>` : '';
           parts.push(`<div class="drow"><span class="d">${niceDate(dt)}</span>
-            <span class="svc">${s.carrier}${s.no?' '+s.no:''} · ${s.dep}${star}→${s.arr}${star} ${tag}${note}${arrLine}</span>
+            <span class="svc">${carrierBadge(s.carrier)}<span class="carrier">${s.carrier}</span>${s.no?' '+s.no:''} · ${s.dep}${star}→${s.arr}${star} ${tag}${note}${arrLine}</span>
             <span><a href="#" onclick="planItinerary('${side}','${routeKey}','${dt}','${s.carrier}','${s.dep}','${s.arr}','${s.no||''}');return false;" class="planlink">plan this →</a> · <a href="${dated}" target="_blank" rel="noopener">fares ↗</a> · ${secondary}</span></div>`);
         });
       }
@@ -726,10 +731,10 @@ function renderCompare(hostId, side, order){
     if(x.flying.length){
       body = x.flying.map(s=>{ const fit=inWindow(s.dep);
         const tg = fit===null?'' : (fit?' <span class="badge day">✓</span>':' <span class="badge off">⚠</span>');
-        return `${s.carrier} ${s.dep}${s.approx?'*':''}${tg}`; }).join('<br>');
+        return `${carrierBadge(s.carrier)}<span class="carrier">${s.carrier}</span> ${s.dep}${s.approx?'*':''}${tg}`; }).join('<br>');
     } else if(x.others.length){ body = `<span class="muted2">no fixed-time flight this day</span>`; }
     else { body = `<span class="muted2">no flight on ${DOW[dow]}</span>`; }
-    const also = x.others.length ? `<div class="cmp-also">also: ${x.others.map(s=>s.carrier).join(', ')}</div>` : '';
+    const also = x.others.length ? `<div class="cmp-also">also: ${x.others.map(s=>carrierBadge(s.carrier)+'<span class="carrier">'+s.carrier+'</span>').join(' ')}</div>` : '';
     const arrLine = x.repAi ? `<div class="arr ${x.repAi.status}">→ ${x.repAi.dest} ~${x.repAi.finalStr}${x.repAi.conn?' · '+x.repAi.conn:''}</div>` : '';
     const good = x.flies && x.lh[0] <= minLow*1.05;
     const badge = good ? `<span class="goodbadge">✓ Good value</span>` : '';
@@ -877,8 +882,9 @@ function renderAdmin(){
 }
 
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "2.5";
+const VERSION = "2.6";
 const CHANGELOG = [
+  ["2.6","2026-08-12","Colour tuning: darker blue page background, reddish-pastel preferences bar, pale-yellow buttons, airline names in dark blue, and 'no flights' text in red. Added brand-coloured carrier badges (FR/U2/LS/VY) as lightweight stand-ins for airline logos."],
   ["2.5","2026-08-12","UI refresh: pastel-blue theme (less white), CT circle logo/favicon, the intro banner collapsed behind a small ? at top-right, a bolder green 'plan this' button, the four routings as large 2-per-row buttons, and a more compact prefs bar so all the initial choices fit on one screen."],
   ["2.4","2026-08-12","Itinerary generator: tap 'plan this' on any flight to get a full door-to-door plan — coach to the airport, flight, Airport Flyer/Air-Rail, trains and coach home — with computed times, buffers, last-connection warnings, links, and a Copy button."],
   ["2.3","2026-08-11","Refresh policy: the weekly task now leaves a source alone while valid and only re-pulls it within ~14 days of expiry (documented in the Admin panel). Enforced a direct-flights-only, ≤3h rule across the app and the weekly task."],

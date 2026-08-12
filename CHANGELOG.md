@@ -3,6 +3,14 @@
 All notable changes to the Palafrugell ↔ Cheltenham Spa journey planner.
 Versions are also shown in-app (header badge + footer "Version history").
 
+## [2.6] — 2026-08-12
+- Colour tuning: darker blue page background, reddish-pastel preferences bar,
+  pale-yellow action buttons, airline names in dark blue, and "no flights" text
+  in red.
+- Added brand-coloured **carrier badges** (FR / U2 / LS / VY) beside each airline
+  as lightweight stand-ins for logos — real airline logos are copyrighted and
+  unreliable to hotlink, so these mini brand chips do the same job.
+
 ## [2.5] — 2026-08-12
 - UI refresh aimed at fitting the initial choices on one screen: pastel-blue
   theme (less stark white), a **CT** circle logo + browser favicon, the intro
