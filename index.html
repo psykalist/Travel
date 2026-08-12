@@ -68,6 +68,25 @@ h1 { font-size:22px; margin:0 0 2px; letter-spacing:-0.2px; }
 .arr.tight { color:#b26a00; }
 .arr.miss { color:#c62828; font-weight:600; }
 
+/* itinerary card */
+.planlink { font-weight:700 !important; color:#0d7a4f !important; }
+.itcard { background:#fff; border:2px solid #0d7a4f; border-radius:16px; padding:16px 18px; margin-bottom:18px; box-shadow:0 6px 20px rgba(13,122,79,.14); }
+.ithead { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:10px; }
+.ithead b { font-size:16px; }
+.itsub { font-size:12.5px; color:#667; margin-top:2px; }
+.itwarn { background:#fdecec; border:1px solid #f3bcbc; color:#8f2020; border-radius:10px; padding:9px 12px; font-size:12.8px; margin-bottom:12px; }
+.itlegs { display:flex; flex-direction:column; }
+.itleg { display:flex; gap:12px; align-items:flex-start; }
+.itdot { flex:none; width:34px; height:34px; border-radius:50%; background:#eef4ff; display:flex; align-items:center; justify-content:center; font-size:16px; }
+.itbody { padding-bottom:4px; }
+.ittitle { font-weight:600; font-size:14px; }
+.itwhen { font-size:13px; color:#0d7a4f; font-weight:700; font-variant-numeric:tabular-nums; margin:1px 0; }
+.itdetail { font-size:12.3px; color:#667; }
+.itbody a { font-size:12px; color:#1a53d0; text-decoration:none; font-weight:600; }
+.itconn { color:#9aa3b0; font-size:16px; margin:2px 0 2px 10px; }
+.itfoot { font-size:11.5px; color:#8a93a0; margin:10px 0; }
+.itcopy { font:inherit; font-size:13px; font-weight:600; background:#0d7a4f; color:#fff; border:none; border-radius:9px; padding:8px 16px; cursor:pointer; }
+
 .routepick { display:flex; flex-wrap:wrap; gap:8px; margin:4px 0 16px; }
 .chip { padding:8px 14px; border-radius:20px; border:1px solid #d3d8e0; background:#fff; cursor:pointer; font-size:13.5px; font-weight:600; color:#3a4250; }
 .chip.active { background:#0d7a4f; color:#fff; border-color:#0d7a4f; }
@@ -207,6 +226,8 @@ tr.ad-expired td { background:#fef7f7; }
     <div class="tab active" data-dir="out" onclick="setDir('out')">Outbound<small>Palafrugell &rarr; Cheltenham</small></div>
     <div class="tab" data-dir="home" onclick="setDir('home')">Homebound<small>Cheltenham &rarr; Palafrugell</small></div>
   </div>
+
+  <div id="itinerary"></div>
 
   <section class="dir active" id="dir-out">
     <div class="note"><b>Pick your routing.</b> Girona is closest and best in summer; Barcelona &amp; Birmingham tend to work better in the shoulder/winter season. Buffers assume you never want to risk the last onward connection; the cost is an indicative return per traveller.</div>
@@ -539,7 +560,7 @@ function renderScan(hostId, routeKey, side){
           const arrLine = ai ? `<br><span class="arr ${ai.status}">→ ${ai.dest} ~${ai.finalStr}${ai.conn?' · '+ai.conn:''}</span>` : '';
           parts.push(`<div class="drow"><span class="d">${niceDate(dt)}</span>
             <span class="svc">${s.carrier}${s.no?' '+s.no:''} · ${s.dep}${star}→${s.arr}${star} ${tag}${note}${arrLine}</span>
-            <span><a href="${dated}" target="_blank" rel="noopener">fares · your date ↗</a> · ${secondary}</span></div>`);
+            <span><a href="#" onclick="planItinerary('${side}','${routeKey}','${dt}','${s.carrier}','${s.dep}','${s.arr}','${s.no||''}');return false;" class="planlink">plan this →</a> · <a href="${dated}" target="_blank" rel="noopener">fares ↗</a> · ${secondary}</span></div>`);
         });
       }
     });
@@ -556,6 +577,89 @@ function renderScan(hostId, routeKey, side){
     <h3>Flight options — ${o} → ${d}</h3>
     <p class="hint"><b>Direct flights only, ≤3h.</b> Fixed-time services show per day${season?' · '+season:''}. <b>*</b> = approximate time. <b>fares · your date</b> opens the live site pre-filled with your date &amp; route; the second link books direct with that airline. Other carriers on the route are listed below.</p>
     ${rows}${alsoHtml}</div>`;
+}
+
+// ---- per-flight itinerary generator ----
+const CHECKIN = 120;                       // min at airport before a flight
+const AIRPORTBUS = { gro:120, bcn:165 };   // Palafrugell ⇄ airport coach minutes (gro incl. Girona→airport hop)
+function pickBusBefore(grp, arriveByMin){
+  const arr=(DATA.busTimes[grp]||{}).toDest||[]; const j=AIRPORTBUS[grp]; let best=null;
+  arr.forEach(t=>{ const dep=toMin(t); if(dep+j<=arriveByMin && (!best||dep>toMin(best))) best=t; });
+  return best;
+}
+function pickBusAfter(grp, readyMin){
+  const arr=(DATA.busTimes[grp]||{}).toPal||[]; let best=null;
+  arr.forEach(t=>{ const dep=toMin(t); if(dep>=readyMin && (!best||dep<toMin(best))) best=t; });
+  return best;
+}
+function itLeg(icon,title,when,detail,link){ return {icon,title,when,detail,link}; }
+function computeItinerary(side,key,dt,carrier,dep,arr,no){
+  const legs=[], warn=[]; const [oA,dA]=IATA[key];
+  if(side==='out'){
+    const grp = oA==='GRO'?'gro':'bcn'; const hop=HOP[dA];
+    const busDep=pickBusBefore(grp, toMin(dep)-CHECKIN);
+    if(busDep){ const j=AIRPORTBUS[grp];
+      legs.push(itLeg('🚌','Coach — Palafrugell → '+(grp==='gro'?'Girona (+ airport connection)':'Barcelona Airport (T2/T1)'),
+        busDep+' → ~'+fromMin(toMin(busDep)+j),
+        grp==='gro'?'Moventis 5/41/42 to Girona, then Sagalés/taxi to the airport (~20 min).':'Moventis line 1 direct coach.',
+        {label:'bus times',href:DATA.busTimes[grp].src})); }
+    else warn.push('No listed coach reaches the airport ≥2h before departure — take an earlier one or a taxi.');
+    legs.push(itLeg('✈️','Flight — '+carrier+(no?' '+no:'')+' · '+oA+' → '+dA, dep+' → '+arr, 'Check in ≥2h before; direct, ≤3h.',
+      {label:'fares · '+niceDate(dt),href:datedFlightLink(carrier,oA,dA,dt)}));
+    const ready=toMin(arr)+hop.deplane, stat=ready+hop.toStation, trDep=stat+hop.wait, fin=trDep+hop.train;
+    legs.push(itLeg('🚌',(dA==='BRS'?'Airport Flyer A1 → Bristol Temple Meads':'Air-Rail link → Birmingham International rail'),
+      '~'+fromMin(ready)+' → ~'+fromMin(stat), 'Allow ~'+hop.deplane+' min after landing (deplane, passport, bags).',
+      {label:'flyer times',href:LINKS.flyer}));
+    legs.push(itLeg('🚆','Train → Cheltenham Spa', '~'+fromMin(trDep)+' → ~'+fromMin(fin),
+      (dA==='BHX'?'Via New Street. ':'')+'CrossCountry/GWR — confirm the exact train live.',
+      {label:'live times',href:LINKS.natrail(dA==='BRS'?'bristol-temple-meads':'birmingham-new-street','cheltenham-spa')}));
+    const ai=arrivalInfo(dA,arr); if(ai&&ai.conn&&ai.status!=='ok') warn.push(ai.conn);
+  } else {
+    const ukA=oA, spA=dA; const grp = spA==='GRO'?'gro':'bcn'; const hop=HOP[ukA];
+    const airportBy=toMin(dep)-CHECKIN, boardBy=airportBy-hop.toStation, trByCh=boardBy-hop.wait-hop.train;
+    if(trByCh < 5*60) warn.push('This flight needs a train before ~05:00 — realistically travel to the airport the evening before and stay nearby.');
+    legs.push(itLeg('🚆','Train — Cheltenham Spa → '+(ukA==='BRS'?'Bristol Temple Meads':'Birmingham New Street'),
+      'leave Cheltenham by ~'+fromMin(trByCh), 'Catch a train departing by about this time to make check-in safely.',
+      {label:'live times',href:LINKS.natrail('cheltenham-spa',ukA==='BRS'?'bristol-temple-meads':'birmingham-new-street')}));
+    legs.push(itLeg('🚌',(ukA==='BRS'?'Airport Flyer A1 → Bristol Airport':'Air-Rail link → Birmingham Airport'),
+      'at the airport by ~'+fromMin(airportBy), 'Be airside-ready ≥2h before departure.', {label:'flyer times',href:LINKS.flyer}));
+    legs.push(itLeg('✈️','Flight — '+carrier+(no?' '+no:'')+' · '+oA+' → '+dA, dep+' → '+arr, 'Direct, ≤3h.',
+      {label:'fares · '+niceDate(dt),href:datedFlightLink(carrier,oA,dA,dt)}));
+    const ready=toMin(arr)+HOP[spA].deplane; const busDep=pickBusAfter(grp,ready);
+    if(busDep){ const j=AIRPORTBUS[grp]; const wait=toMin(busDep)-ready;
+      if(wait>150) warn.push('Long wait ('+Math.round(wait/60*10)/10+'h) for the next coach in the stored baseline timetable — the live summer sheet likely has an earlier one; check the link.');
+      legs.push(itLeg('🚌','Coach — '+(grp==='gro'?'Girona':'Barcelona Airport')+' → Palafrugell',
+        busDep+' → ~'+fromMin(toMin(busDep)+j),
+        grp==='gro'?'Reach Girona bus station from the airport (Sagalés/taxi), then Moventis 5/41/42.':'Moventis line 1 direct coach.',
+        {label:'bus times',href:DATA.busTimes[grp].src})); }
+    else warn.push('No listed coach after you land — check the last service or plan a taxi/overnight.');
+  }
+  return {legs,warn};
+}
+function planItinerary(side,key,dt,carrier,dep,arr,no){ state.itin={side,key,dt,carrier,dep,arr,no}; render();
+  const el=document.getElementById('itinerary'); if(el && el.scrollIntoView) el.scrollIntoView({behavior:'smooth',block:'start'}); }
+function closeItin(){ state.itin=null; render(); }
+function renderItinerary(){
+  const host=document.getElementById('itinerary'); if(!host) return;
+  const it=state.itin; if(!it){ host.innerHTML=''; return; }
+  const {legs,warn}=computeItinerary(it.side,it.key,it.dt,it.carrier,it.dep,it.arr,it.no);
+  const rows=legs.map((l,i)=>`<div class="itleg"><div class="itdot">${l.icon}</div><div class="itbody">
+      <div class="ittitle">${l.title}</div><div class="itwhen">${l.when}</div><div class="itdetail">${l.detail}</div>
+      ${l.link?`<a href="${l.link.href}" target="_blank" rel="noopener">${l.link.label} ↗</a>`:''}</div></div>${i<legs.length-1?'<div class="itconn">↓</div>':''}`).join('');
+  const warns=warn.length?`<div class="itwarn">${warn.map(w=>'⚠ '+w).join('<br>')}</div>`:'';
+  const dir=it.side==='out'?'Palafrugell → Cheltenham Spa':'Cheltenham Spa → Palafrugell';
+  host.innerHTML=`<div class="itcard"><div class="ithead"><div><b>Itinerary — ${dir}</b>
+      <div class="itsub">${ROUTELABEL[it.key]} · ${niceDate(it.dt)} · ${it.carrier}${it.no?' '+it.no:''} ${it.dep}→${it.arr}</div></div>
+      <button class="backbtn" onclick="closeItin()">✕ close</button></div>
+      ${warns}<div class="itlegs">${rows}</div>
+      <div class="itfoot">Coach times are from the stored timetables; train times are computed from typical durations — confirm live before you travel. Buffers: ${CHECKIN}-min check-in + airport transfer time.</div>
+      <button class="itcopy" onclick="copyItin()">Copy itinerary</button></div>`;
+}
+function copyItin(){ const it=state.itin; if(!it) return; const {legs,warn}=computeItinerary(it.side,it.key,it.dt,it.carrier,it.dep,it.arr,it.no);
+  let t=`Itinerary — ${it.side==='out'?'Palafrugell → Cheltenham Spa':'Cheltenham Spa → Palafrugell'} · ${niceDate(it.dt)}\n${ROUTELABEL[it.key]} · ${it.carrier}${it.no?' '+it.no:''} ${it.dep}→${it.arr}\n`;
+  legs.forEach(l=>{ t+=`\n${l.title}\n  ${l.when}\n  ${l.detail}`; });
+  if(warn.length) t+='\n\nNotes:\n'+warn.map(w=>'- '+w).join('\n');
+  try{ navigator.clipboard.writeText(t); const b=document.querySelector('.itcopy'); if(b){ b.textContent='Copied ✓'; setTimeout(()=>b.textContent='Copy itinerary',1500);} }catch(e){}
 }
 
 // ---- compare-all overview + progressive disclosure ----
@@ -764,8 +868,9 @@ function renderAdmin(){
 }
 
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "2.3";
+const VERSION = "2.4";
 const CHANGELOG = [
+  ["2.4","2026-08-12","Itinerary generator: tap 'plan this' on any flight to get a full door-to-door plan — coach to the airport, flight, Airport Flyer/Air-Rail, trains and coach home — with computed times, buffers, last-connection warnings, links, and a Copy button."],
   ["2.3","2026-08-11","Refresh policy: the weekly task now leaves a source alone while valid and only re-pulls it within ~14 days of expiry (documented in the Admin panel). Enforced a direct-flights-only, ≤3h rule across the app and the weekly task."],
   ["2.2","2026-08-11","Added a data-source registry with each static timetable's printed validity/expiry, and an Admin panel that flags OK / expiring-soon / expired so the weekly script knows what to re-pull. (Immediately flags the off-season Girona/Barcelona bus sheets as expired — summer timetables need pulling.)"],
   ["2.1","2026-08-11","Flight links now open the live site pre-filled with your date & route on the primary button (Ryanair native, Skyscanner-by-date for easyJet/Jet2/Vueling), with a direct-to-airline link alongside. Trains/buses can't be date-linked (rail sites use non-public station IDs; Moventis serves static PDFs)."],
@@ -782,7 +887,7 @@ const CHANGELOG = [
   ["1.0","2026-08-11","Initial planner: both directions, four airport routings (Girona/Barcelona × Bristol/Birmingham), live operator links."]
 ];
 
-const state = { dir:'out', out:'gro_brs', home:'bhx_bcn' };
+const state = { dir:'out', out:'gro_brs', home:'bhx_bcn', itin:null };
 function setDir(d){ state.dir=d;
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.dir===d));
   document.getElementById('dir-out').classList.toggle('active',d==='out');
@@ -815,6 +920,7 @@ function render(){
     document.getElementById('pick-'+side).style.display='none';
     ['cost-'+side,'scan-'+side,'legs-'+side].forEach(id=>{ const e=document.getElementById(id); if(e) e.style.display=f?'':'none'; });
   });
+  renderItinerary();
   renderBusTimes();
   renderAdmin();
   document.getElementById('ver').textContent = VERSION;

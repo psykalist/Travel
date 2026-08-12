@@ -3,6 +3,15 @@
 All notable changes to the Palafrugell ↔ Cheltenham Spa journey planner.
 Versions are also shown in-app (header badge + footer "Version history").
 
+## [2.4] — 2026-08-12
+- **Itinerary generator.** Tap **"plan this"** on any flight to get a full
+  door-to-door plan: coach Palafrugell→airport, the flight, Airport Flyer /
+  Air-Rail, the train(s) to Cheltenham — and the reverse homebound — each with
+  computed times and buffers (2h check-in + realistic transfer times).
+- Picks the actual coach from the stored timetable, flags last-connection risk,
+  pre-5am train departures, and long airport waits, links every leg, and has a
+  Copy button. Train times are computed from typical durations (confirm live).
+
 ## [2.3] — 2026-08-11
 - **Expiry-gated refresh policy.** The weekly task now leaves a source untouched
   while it's still valid and only re-pulls it within ~14 days of its printed
