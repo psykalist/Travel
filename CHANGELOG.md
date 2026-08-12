@@ -3,6 +3,13 @@
 All notable changes to the Palafrugell ↔ Cheltenham Spa journey planner.
 Versions are also shown in-app (header badge + footer "Version history").
 
+## [2.5] — 2026-08-12
+- UI refresh aimed at fitting the initial choices on one screen: pastel-blue
+  theme (less stark white), a **CT** circle logo + browser favicon, the intro
+  banner collapsed behind a small **?** at top-right, a bolder green **plan this**
+  button, the four routings shown as large **two-per-row** buttons, and a more
+  compact preferences bar (return/second-date fields hide in one-way / single-date).
+
 ## [2.4] — 2026-08-12
 - **Itinerary generator.** Tap **"plan this"** on any flight to get a full
   door-to-door plan: coach Palafrugell→airport, the flight, Airport Flyer /
