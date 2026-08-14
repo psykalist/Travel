@@ -3,6 +3,10 @@
 All notable changes to the Palafrugell ↔ Cheltenham Spa journey planner.
 Versions are also shown in-app (header badge + footer "Version history").
 
+## [2.7] — 2026-08-14
+- Airline logo chips now have a thin black border and more breathing room around
+  them (spacing bumped to 10px on each side, up from 6px on the right only).
+
 ## [2.6] — 2026-08-12
 - Colour tuning: darker blue page background, reddish-pastel preferences bar,
   pale-yellow action buttons, airline names in dark blue, and "no flights" text
