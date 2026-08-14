@@ -3,6 +3,15 @@
 All notable changes to the Palafrugell ↔ Cheltenham Spa journey planner.
 Versions are also shown in-app (header badge + footer "Version history").
 
+## [2.9] — 2026-08-14
+- Girona airport ground leg is now modelled as two legs, since direct airport
+  coaches are limited: Palafrugell ⇄ Girona bus station (Moventis 5/41/42) +
+  Girona station ⇄ airport (Sagalés line 607, roughly hourly and timed to
+  Ryanair, ~25 min, €2.80).
+- Added the line 607 schedule and live link to the bus-timetable panel, and split
+  the itinerary generator so both hops show for each direction (Girona routings).
+- Added line 607 to the Admin data-source tracker and to the weekly refresh task.
+
 ## [2.8] — 2026-08-14
 - Barcelona⇄Birmingham flight options now list real per-day times for all four
   carriers (Jet2, Vueling, easyJet, Ryanair), not just Jet2. Times pulled from

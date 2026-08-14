@@ -336,11 +336,18 @@ const DATA = {
   busTimes: {
     season: "Times below are the WINTER baseline (Sep–Jun, Mon–Fri). We're currently in the SUMMER season (Jul–Aug 2026) — the current summer sheet is linked per line; exact summer departures differ.",
     gro: {
-      label: "Palafrugell ⇄ Girona city bus station · lines 5/41/42 via Palamós/Platja d'Aro (~1h40). For the airport, connect in Girona (Sagalés/taxi).",
+      label: "Leg 1 · Palafrugell ⇄ Girona city bus station · Moventis (Sarfa) lines 5/41/42 via Palamós/Platja d'Aro (~1h00–1h40). There is NO direct airport coach — change at Girona for the 607 (see below).",
       toDest: ["06:15","06:30","07:15","07:30","08:20","12:20","13:00","13:30","14:00","14:45","16:20","17:40","18:00","18:15","18:40","19:20","20:20"],
       toPal:  ["08:00","08:15","09:00","09:15","10:00","11:00","14:00","14:45","15:15","15:45","16:15","18:00","19:15","19:45","20:00","20:15","21:00","22:00"],
       note: "Winter baseline shown — open the summer sheet for exact Jul–Aug times.",
       src: "https://www.moventis.es/sites/moventis/files/line/files/5-41-42_girona-costa_brava_juliol-agost_2026.pdf"
+    },
+    gro_air: {
+      label: "Leg 2 · Girona city bus/train station ⇄ Girona Airport · Sagalés line 607 (~25–30 min, €2.80). Roughly hourly, ~05:00 to ~00:00 daily, and timed to Ryanair arrivals/departures. Girona's bus & train stations share one building, so it also connects to trains.",
+      toDest: ["05:00","06:00","07:00","08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00","21:00","22:00","23:00"],
+      toPal:  ["05:30","06:30","07:30","08:30","09:30","10:30","11:30","12:30","13:30","14:30","15:30","16:30","17:30","18:30","19:30","20:30","21:30","22:30","23:30","00:30"],
+      note: "Hourly baseline (≈ top of each hour) — exact 607 departures track the day's Ryanair schedule, so confirm on the live link. → row = towards the Airport; return row = towards Girona station.",
+      src: "https://www.sagales.com/en/linia/607"
     },
     bcn: {
       label: "Palafrugell ⇄ Barcelona Airport (T2/T1) · line 1 direct coach (~2h45). Airport-bound services shown.",
@@ -359,6 +366,9 @@ const DATA = {
     {id:"bus_gro", label:"Moventis 5/41/42 · Palafrugell ⇄ Girona", validFrom:"2026-07-01", validTo:"2026-08-31",
       src:"https://www.moventis.es/sites/moventis/files/line/files/5-41-42_girona-costa_brava_juliol-agost_2026.pdf",
       note:"Current summer sheet (Jul–Aug 2026); winter sheet is Sep–Jun. Times below are the winter baseline — see PDF for exact summer departures", unconfirmed:true},
+    {id:"bus_gro_air", label:"Sagalés 607 · Girona station ⇄ Girona Airport", validFrom:"2026-08-14", validTo:null,
+      src:"https://www.sagales.com/en/linia/607",
+      note:"Airport shuttle for the Girona routing (no direct airport↔Palafrugell coach). ~Hourly 05:00–00:00, timed to Ryanair; stored as an hourly baseline — exact minutes track flights, confirm on the link", unconfirmed:true},
     {id:"bus_bcn", label:"Moventis line 1 · Palafrugell ⇄ Barcelona airport", validFrom:"2026-06-01", validTo:"2026-08-31",
       src:"https://www.moventis.es/es/lineas-horarios/linea-autobus-1-aeroport-bcn-barcelona-costa-brava-centre",
       note:"Current summer season; exact departures per the line page PDF", unconfirmed:true},
@@ -615,10 +625,17 @@ function computeItinerary(side,key,dt,carrier,dep,arr,no){
     const grp = oA==='GRO'?'gro':'bcn'; const hop=HOP[dA];
     const busDep=pickBusBefore(grp, toMin(dep)-CHECKIN);
     if(busDep){ const j=AIRPORTBUS[grp];
-      legs.push(itLeg('🚌','Coach — Palafrugell → '+(grp==='gro'?'Girona (+ airport connection)':'Barcelona Airport (T2/T1)'),
-        busDep+' → ~'+fromMin(toMin(busDep)+j),
-        grp==='gro'?'Moventis 5/41/42 to Girona, then Sagalés/taxi to the airport (~20 min).':'Moventis line 1 direct coach.',
-        {label:'bus times',href:DATA.busTimes[grp].src})); }
+      if(grp==='gro'){
+        const atGirona=toMin(busDep)+70;                 // Moventis Palafrugell → Girona bus station
+        legs.push(itLeg('🚌','Coach — Palafrugell → Girona bus station', busDep+' → ~'+fromMin(atGirona),
+          'Moventis (Sarfa) 5/41/42 via the coast (~1h–1h40).', {label:'bus times',href:DATA.busTimes.gro.src}));
+        legs.push(itLeg('🚌','Sagalés 607 — Girona bus station → Airport', '~'+fromMin(atGirona+25)+' → ~'+fromMin(toMin(busDep)+j),
+          'Hourly & timed to Ryanair (~25 min). No direct airport coach, so leave time for the change.', {label:'607 times',href:DATA.busTimes.gro_air.src}));
+      } else {
+        legs.push(itLeg('🚌','Coach — Palafrugell → Barcelona Airport (T2/T1)', busDep+' → ~'+fromMin(toMin(busDep)+j),
+          'Moventis line 1 direct coach.', {label:'bus times',href:DATA.busTimes.bcn.src}));
+      }
+    }
     else warn.push('No listed coach reaches the airport ≥2h before departure — take an earlier one or a taxi.');
     legs.push(itLeg('✈️','Flight — '+carrier+(no?' '+no:'')+' · '+oA+' → '+dA, dep+' → '+arr, 'Check in ≥2h before; direct, ≤3h.',
       {label:'fares · '+niceDate(dt),href:datedFlightLink(carrier,oA,dA,dt)}));
@@ -641,14 +658,25 @@ function computeItinerary(side,key,dt,carrier,dep,arr,no){
       'at the airport by ~'+fromMin(airportBy), 'Be airside-ready ≥2h before departure.', {label:'flyer times',href:LINKS.flyer}));
     legs.push(itLeg('✈️','Flight — '+carrier+(no?' '+no:'')+' · '+oA+' → '+dA, dep+' → '+arr, 'Direct, ≤3h.',
       {label:'fares · '+niceDate(dt),href:datedFlightLink(carrier,oA,dA,dt)}));
-    const ready=toMin(arr)+HOP[spA].deplane; const busDep=pickBusAfter(grp,ready);
-    if(busDep){ const j=AIRPORTBUS[grp]; const wait=toMin(busDep)-ready;
-      if(wait>150) warn.push('Long wait ('+Math.round(wait/60*10)/10+'h) for the next coach in the stored baseline timetable — the live summer sheet likely has an earlier one; check the link.');
-      legs.push(itLeg('🚌','Coach — '+(grp==='gro'?'Girona':'Barcelona Airport')+' → Palafrugell',
-        busDep+' → ~'+fromMin(toMin(busDep)+j),
-        grp==='gro'?'Reach Girona bus station from the airport (Sagalés/taxi), then Moventis 5/41/42.':'Moventis line 1 direct coach.',
-        {label:'bus times',href:DATA.busTimes[grp].src})); }
-    else warn.push('No listed coach after you land — check the last service or plan a taxi/overnight.');
+    const ready=toMin(arr)+HOP[spA].deplane;
+    if(grp==='gro'){
+      const atGirona=ready+60;                            // Sagalés 607 airport → Girona station (hourly, ~25 min ride + wait)
+      legs.push(itLeg('🚌','Sagalés 607 — Girona Airport → Girona bus station', '~'+fromMin(ready+5)+' → ~'+fromMin(atGirona),
+        'Hourly, timed to Ryanair arrivals (~25 min ride). No direct airport→Palafrugell coach, so change here.', {label:'607 times',href:DATA.busTimes.gro_air.src}));
+      const busDep=pickBusAfter('gro', atGirona);
+      if(busDep){ const wait=toMin(busDep)-atGirona;
+        if(wait>150) warn.push('Long wait ('+Math.round(wait/60*10)/10+'h) for the next Moventis coach in the stored baseline — the live summer sheet likely has an earlier one; check the link.');
+        legs.push(itLeg('🚌','Coach — Girona bus station → Palafrugell', busDep+' → ~'+fromMin(toMin(busDep)+70),
+          'Moventis (Sarfa) 5/41/42.', {label:'bus times',href:DATA.busTimes.gro.src})); }
+      else warn.push('No listed Moventis coach after the 607 connection — check the last service or plan a taxi/overnight.');
+    } else {
+      const busDep=pickBusAfter(grp,ready);
+      if(busDep){ const j=AIRPORTBUS[grp]; const wait=toMin(busDep)-ready;
+        if(wait>150) warn.push('Long wait ('+Math.round(wait/60*10)/10+'h) for the next coach in the stored baseline timetable — the live summer sheet likely has an earlier one; check the link.');
+        legs.push(itLeg('🚌','Coach — Barcelona Airport → Palafrugell', busDep+' → ~'+fromMin(toMin(busDep)+j),
+          'Moventis line 1 direct coach.', {label:'bus times',href:DATA.busTimes.bcn.src})); }
+      else warn.push('No listed coach after you land — check the last service or plan a taxi/overnight.');
+    }
   }
   return {legs,warn};
 }
@@ -838,17 +866,20 @@ function renderBusTimes(){
   const host=document.getElementById('bustimes'); if(!host) return;
   const B=DATA.busTimes;
   const chips=a=>a.map(t=>`<span class="bt">${t}</span>`).join('');
-  function block(x, destName){
+  function block(x, destName, retName){
+    retName = retName || 'Palafrugell';
     return `<div class="btblock"><div class="btlabel">${x.label}</div>
       <div class="btrow"><span class="btdir">→ ${destName}</span>${chips(x.toDest)}</div>
-      <div class="btrow"><span class="btdir">→ Palafrugell</span>${chips(x.toPal)}</div>
+      <div class="btrow"><span class="btdir">→ ${retName}</span>${chips(x.toPal)}</div>
       ${x.note?`<div class="btnote">${x.note}</div>`:''}
       <a class="btsrc" href="${x.src}" target="_blank" rel="noopener">official timetable ↗</a></div>`;
   }
   host.innerHTML = `<details class="btwrap"><summary>🚌 Bus timetables — Palafrugell ⇄ Girona / Barcelona airport</summary>
     <div class="btseason">${B.season}</div>
-    ${block(B.gro,'Girona')}
-    ${block(B.bcn,'Barcelona Airport')}
+    <div class="btnote" style="margin:2px 0 8px"><b>Girona airport = two legs.</b> Direct airport coaches are limited, so plan it as Palafrugell ⇄ Girona station (Moventis 5/41/42) + Girona station ⇄ airport (Sagalés 607).</div>
+    ${block(B.gro,'Girona station','Palafrugell')}
+    ${block(B.gro_air,'Girona Airport','Girona station')}
+    ${block(B.bcn,'Barcelona Airport','Palafrugell')}
   </details>`;
 }
 
@@ -884,8 +915,9 @@ function renderAdmin(){
 }
 
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "2.8";
+const VERSION = "2.9";
 const CHANGELOG = [
+  ["2.9","2026-08-14","Girona airport ground leg is now modelled as two legs, since direct airport coaches are limited: Palafrugell⇄Girona bus station (Moventis 5/41/42) + Girona station⇄airport (Sagalés line 607, ~hourly, timed to Ryanair). Added the 607 schedule + live link to the bus panel, split the itinerary generator to show both hops each way, and added line 607 to the Admin source tracker and the weekly refresh."],
   ["2.8","2026-08-14","Barcelona⇄Birmingham now shows real per-day times for all four carriers (Jet2, Vueling, easyJet, Ryanair), not just Jet2 — pulled from FlightsFrom for the summer schedule (approx; times vary by day, exact time on the link). The weekly refresh task now re-pulls these from FlightsFrom and they expire with the summer season (~24 Oct)."],
   ["2.7","2026-08-14","Airline logo chips now have a thin black border and more space around them (spacing bumped to 10px each side)."],
   ["2.6","2026-08-12","Colour tuning: darker blue page background, reddish-pastel preferences bar, pale-yellow buttons, and 'no flights' text in red. Airlines now show as brand-coloured wordmark chips (Ryanair navy/yellow, easyJet orange, Jet2 red, Vueling yellow) — self-contained logo stand-ins, aligned to the row height."],
