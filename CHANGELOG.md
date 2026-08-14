@@ -3,6 +3,15 @@
 All notable changes to the Palafrugell ↔ Cheltenham Spa journey planner.
 Versions are also shown in-app (header badge + footer "Version history").
 
+## [2.8] — 2026-08-14
+- Barcelona⇄Birmingham flight options now list real per-day times for all four
+  carriers (Jet2, Vueling, easyJet, Ryanair), not just Jet2. Times pulled from
+  FlightsFrom for the summer schedule; shown as approximate because they shift
+  day-to-day (each row notes the day exceptions, exact time on the link).
+- The weekly refresh task now re-pulls these BCN⇄BHX times from FlightsFrom, and
+  the source expires with the summer season (~24 Oct) so the winter schedule
+  gets pulled after that.
+
 ## [2.7] — 2026-08-14
 - Airline logo chips now have a thin black border and more breathing room around
   them (spacing bumped to 10px on each side, up from 6px on the right only).

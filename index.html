@@ -318,16 +318,16 @@ const DATA = {
     },
     bcn_bhx: {
       su: [
-        {carrier:"Jet2", no:"LS1338", days:[0,1,2,3,4,5,6], dep:"11:30", arr:"13:00", season:"Year-round", approx:false, note:""},
-        {carrier:"Vueling", no:"", days:[0,1,2,3,4,5,6], dep:"", arr:"", season:"Year-round", approx:true, note:""},
-        {carrier:"easyJet", no:"", days:[0,1,2,3,4,5,6], dep:"", arr:"", season:"Year-round", approx:true, note:""},
-        {carrier:"Ryanair", no:"", days:[0,1,2,3,4,5,6], dep:"", arr:"", season:"Year-round", approx:true, note:""}
+        {carrier:"Jet2", no:"LS1338", days:[0,1,4,5], dep:"11:30", arr:"13:00", season:"Summer sched — to ~24 Oct", approx:true, note:"Fri departs later ~16:35"},
+        {carrier:"Vueling", no:"VY8754", days:[1,2,3,5], dep:"10:05", arr:"11:35", season:"Summer sched — to ~24 Oct", approx:true, note:"Thu ~12:15, Sat ~15:10, Sun ~08:00"},
+        {carrier:"easyJet", no:"U26620", days:[1,3,5], dep:"10:50", arr:"12:20", season:"Summer sched — to ~24 Oct", approx:true, note:"Wed & Fri often run late ~22:00 instead"},
+        {carrier:"Ryanair", no:"FR3792", days:[1,2,3,4,5,6], dep:"11:10", arr:"12:40", season:"Summer sched — to ~24 Oct", approx:true, note:"1–2/day; times swing 08:10–22:10 — check the app"}
       ],
       us: [
-        {carrier:"Jet2", no:"LS1337", days:[0,1,2,3,4,5,6], dep:"07:30", arr:"10:45", season:"Year-round", approx:false, note:""},
-        {carrier:"Vueling", no:"", days:[0,1,2,3,4,5,6], dep:"", arr:"", season:"Year-round", approx:true, note:""},
-        {carrier:"easyJet", no:"", days:[0,1,2,3,4,5,6], dep:"", arr:"", season:"Year-round", approx:true, note:""},
-        {carrier:"Ryanair", no:"", days:[0,1,2,3,4,5,6], dep:"", arr:"", season:"Year-round", approx:true, note:""}
+        {carrier:"Jet2", no:"LS1337", days:[0,1,4,5], dep:"07:00", arr:"10:20", season:"Summer sched — to ~24 Oct", approx:true, note:"Mon ~07:30, Fri departs later ~12:35"},
+        {carrier:"Vueling", no:"VY8755", days:[1,2,3,5], dep:"12:10", arr:"15:30", season:"Summer sched — to ~24 Oct", approx:true, note:"Thu ~14:25, Sat ~17:25, Sun ~10:05"},
+        {carrier:"easyJet", no:"U26619", days:[1,3,5], dep:"07:00", arr:"10:20", season:"Summer sched — to ~24 Oct", approx:true, note:"Wed & Fri often run late ~18:00 instead"},
+        {carrier:"Ryanair", no:"FR3793", days:[1,2,3,4,5,6], dep:"11:20", arr:"14:40", season:"Summer sched — to ~24 Oct", approx:true, note:"1–2/day; times swing 07:00–22:00 — check the app"}
       ]
     }
   },
@@ -364,8 +364,8 @@ const DATA = {
       note:"Current summer season; exact departures per the line page PDF", unconfirmed:true},
     {id:"fl_gro",  label:"Ryanair Girona ↔ Bristol / Birmingham (summer)", validFrom:"2026-04-04", validTo:"2026-10-24",
       src:"https://corporate.ryanair.com/news/ryanair-launches-summer-2026-schedule-at-bristol/", note:"Summer-only season"},
-    {id:"fl_bcn",  label:"Barcelona ↔ Bristol / Birmingham flights", validFrom:null, validTo:"2026-10-24",
-      src:"https://www.skyscanner.net", note:"Airline summer season; winter schedule from late Oct"},
+    {id:"fl_bcn",  label:"Barcelona ↔ Bristol / Birmingham flights", validFrom:"2026-08-14", validTo:"2026-10-24",
+      src:"https://www.flightsfrom.com/BCN-BHX", note:"BCN⇄BHX Jet2/Vueling/easyJet/Ryanair times pulled from FlightsFrom (summer wk of 14 Aug); times shift day-to-day so shown as approx — winter schedule from late Oct", unconfirmed:true},
     {id:"trains",  label:"UK rail · Bristol/Birmingham ↔ Cheltenham", validFrom:null, validTo:"2026-12-13",
       src:"https://www.nationalrail.co.uk", note:"UK national timetable change (~May & Dec)"},
     {id:"fx",      label:"EUR → GBP exchange rate", validFrom:null, validTo:null,
@@ -884,8 +884,9 @@ function renderAdmin(){
 }
 
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "2.7";
+const VERSION = "2.8";
 const CHANGELOG = [
+  ["2.8","2026-08-14","Barcelona⇄Birmingham now shows real per-day times for all four carriers (Jet2, Vueling, easyJet, Ryanair), not just Jet2 — pulled from FlightsFrom for the summer schedule (approx; times vary by day, exact time on the link). The weekly refresh task now re-pulls these from FlightsFrom and they expire with the summer season (~24 Oct)."],
   ["2.7","2026-08-14","Airline logo chips now have a thin black border and more space around them (spacing bumped to 10px each side)."],
   ["2.6","2026-08-12","Colour tuning: darker blue page background, reddish-pastel preferences bar, pale-yellow buttons, and 'no flights' text in red. Airlines now show as brand-coloured wordmark chips (Ryanair navy/yellow, easyJet orange, Jet2 red, Vueling yellow) — self-contained logo stand-ins, aligned to the row height."],
   ["2.5","2026-08-12","UI refresh: pastel-blue theme (less white), CT circle logo/favicon, the intro banner collapsed behind a small ? at top-right, a bolder green 'plan this' button, the four routings as large 2-per-row buttons, and a more compact prefs bar so all the initial choices fit on one screen."],
