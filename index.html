@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Palafrugell &harr; Cheltenham Spa Travel Planner</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Cdefs%3E%3ClinearGradient%20id='g'%20x1='0'%20y1='0'%20x2='1'%20y2='1'%3E%3Cstop%20offset='0'%20stop-color='%231a53d0'/%3E%3Cstop%20offset='1'%20stop-color='%230d7a4f'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle%20cx='32'%20cy='32'%20r='31'%20fill='url(%23g)'/%3E%3Ctext%20x='32'%20y='42'%20font-size='28'%20font-family='Arial,sans-serif'%20font-weight='bold'%20fill='white'%20text-anchor='middle'%3ECT%3C/text%3E%3C/svg%3E">
+<meta name="theme-color" content="#1a53d0">
+<meta name="description" content="Offline journey planner between Palafrugell (Costa Brava) and Cheltenham Spa — all four airport routings, timetables, buffers and last-connection checks. Works with no signal.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Travel Planner">
 <style>
 :root { color-scheme: light; }
 * { box-sizing: border-box; }
@@ -176,6 +184,7 @@ footer { margin-top:26px; font-size:11.5px; color:#8a93a0; border-top:1px solid 
 .ad-badge.soon { background:#fbf1dd; color:#b26a00; }
 .ad-badge.expired { background:#fbe3e3; color:#c62828; }
 .ad-dates { color:#455; white-space:nowrap; }
+.ad-refresh { color:#667; white-space:nowrap; font-variant-numeric:tabular-nums; }
 .ad-note { color:#667; }
 .adtable a { color:#1a53d0; text-decoration:none; font-weight:600; white-space:nowrap; }
 tr.ad-expired td { background:#fef7f7; }
@@ -893,30 +902,54 @@ function srcStatus(s){
   if(days<=30) return {k:'soon', t:`expires in ${days}d (${s.validTo})`};
   return {k:'ok', t:`valid to ${s.validTo}`};
 }
+// When will the weekly auto-refresh task next attempt to re-pull this source?
+// Policy (mirrors the scheduled task): re-pull once within REFRESH_LEAD days of
+// expiry, or if already expired, or if flagged unconfirmed. Otherwise leave it.
+const REFRESH_LEAD = 14;
+function nextMondayStr(){ const d=new Date(); d.setHours(0,0,0,0);
+  const add=((1-d.getDay())+7)%7 || 7; d.setDate(d.getDate()+add);
+  return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }
+function srcRefresh(s){
+  if(s.unconfirmed) return {due:true, t:'due now — next run '+nextMondayStr()};
+  if(!s.validTo)    return {due:false, t:'only if it changes'};
+  const today=new Date(); today.setHours(0,0,0,0);
+  const exp=new Date(s.validTo+'T00:00:00');
+  const days=Math.round((exp-today)/86400000);
+  if(days<=REFRESH_LEAD) return {due:true, t:'due now — next run '+nextMondayStr()};
+  const d=new Date(exp); d.setDate(d.getDate()-REFRESH_LEAD);
+  return {due:false, t:d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})};
+}
 function renderAdmin(){
   const host=document.getElementById('admin'); if(!host) return;
   const rows=DATA.sources.map(s=>{
     const st=srcStatus(s);
-    const dates = s.validTo ? ((s.validFrom?s.validFrom+' → ':'')+s.validTo) : (s.validFrom?('from '+s.validFrom):'ongoing');
+    const rf=srcRefresh(s);
     const link = s.src ? `<a href="${s.src}" target="_blank" rel="noopener">source ↗</a>` : '';
+    const rfCell = rf.due
+      ? `<span class="ad-badge soon">⟳ ${rf.t}</span>`
+      : `<span class="ad-refresh">${rf.t}</span>`;
     return `<tr class="ad-${st.k}">
       <td class="ad-lab">${s.label}${s.unconfirmed?' <span class="ad-unc">unconfirmed</span>':''}</td>
       <td><span class="ad-badge ${st.k}">${st.k==='expired'?'⚠ expired':st.k==='soon'?'● soon':'✓ ok'}</span></td>
       <td class="ad-dates">${st.t}</td>
+      <td class="ad-dates">${rfCell}</td>
       <td class="ad-note">${s.note||''}</td>
       <td>${link}</td></tr>`;
   }).join('');
   const need=DATA.sources.filter(s=>{const k=srcStatus(s).k;return k==='expired'||k==='soon';}).length;
+  const due=DATA.sources.filter(s=>srcRefresh(s).due).length;
   const summary = need ? `<span class="ad-flag">${need} source${need>1?'s':''} need attention</span>` : `<span class="ad-ok">all sources current</span>`;
-  host.innerHTML = `<details class="adwrap"><summary>🛠 Admin — data sources &amp; expiry ${summary}</summary>
-    <p class="ad-help">Each static timetable is stored with the validity dates printed on it. <b>Refresh policy:</b> the weekly task leaves a source untouched while it's still valid, and only re-pulls it once it's within ~14 days of expiry (or already expired). When it succeeds it records the new sheet's expiry, which gates the next attempt — so most weeks it does nothing. Colours: <b style="color:#0d7a4f">ok</b> · <b style="color:#b26a00">due / expiring &le;30d</b> · <b style="color:#c62828">expired</b>.</p>
-    <table class="adtable"><thead><tr><th>Timetable / data</th><th>Status</th><th>Validity</th><th>Notes</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+  const updateBtn = `<button id="pwaUpdate" onclick="location.reload()" style="display:none;margin-left:6px;background:#0d7a4f;color:#fff;border:none;border-radius:20px;padding:2px 10px;font-size:11.5px;font-weight:700;cursor:pointer">↻ update ready — tap to refresh</button>`;
+  host.innerHTML = `<details class="adwrap"><summary>🛠 Admin — data sources &amp; expiry ${summary}${updateBtn}</summary>
+    <p class="ad-help"><b>Auto-refresh runs by itself.</b> A background task checks these sources every Monday and re-pulls a timetable on its own when a newer one is due — no action needed from you. It only messages you if something changed or a source couldn't be confirmed. <b>Refresh policy:</b> a source is left untouched while valid and only re-pulled once it's within ${REFRESH_LEAD} days of expiry (or already expired, or flagged unconfirmed); on success it records the new sheet's expiry, which gates the next attempt. The <b>Next refresh</b> column shows when each is next due (${due} due now). Colours: <b style="color:#0d7a4f">ok</b> · <b style="color:#b26a00">due / expiring &le;30d</b> · <b style="color:#c62828">expired</b>.</p>
+    <table class="adtable"><thead><tr><th>Timetable / data</th><th>Status</th><th>Validity</th><th>Next refresh</th><th>Notes</th><th></th></tr></thead><tbody>${rows}</tbody></table>
   </details>`;
 }
 
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "2.9";
+const VERSION = "3.0";
 const CHANGELOG = [
+  ["3.0","2026-08-18","Now an installable offline app (PWA): add it to your phone's home screen and it opens with no signal — every timetable, schedule, cost estimate, buffer and last-connection check works offline (only live 'book this flight' links need a connection). Added a web manifest, app icons and a service worker that serves instantly from cache and quietly updates in the background when you're online. Admin panel gains a 'Next refresh' column showing exactly when each source is next due to be auto-pulled, plus a clearer note that the weekly task refreshes sources on its own and only messages you if something changed or couldn't be confirmed."],
   ["2.9","2026-08-14","Girona airport ground leg is now modelled as two legs, since direct airport coaches are limited: Palafrugell⇄Girona bus station (Moventis 5/41/42) + Girona station⇄airport (Sagalés line 607, ~hourly, timed to Ryanair). Added the 607 schedule + live link to the bus panel, split the itinerary generator to show both hops each way, and added line 607 to the Admin source tracker and the weekly refresh."],
   ["2.8","2026-08-14","Barcelona⇄Birmingham now shows real per-day times for all four carriers (Jet2, Vueling, easyJet, Ryanair), not just Jet2 — pulled from FlightsFrom for the summer schedule (approx; times vary by day, exact time on the link). The weekly refresh task now re-pulls these from FlightsFrom and they expire with the summer season (~24 Oct)."],
   ["2.7","2026-08-14","Airline logo chips now have a thin black border and more space around them (spacing bumped to 10px each side)."],
@@ -1026,6 +1059,27 @@ function loadState(){
   ['outFrom','outTo','retFrom','retTo','daypref','pax','triptype','datemode','sortby'].forEach(id=>document.getElementById(id).onchange=render);
   setDir(state.dir);   // apply restored direction + initial render
 })();
+</script>
+<script>
+// ---- PWA: register the service worker so the app installs to your home
+// screen and runs fully offline. Auto-updates in the background when online. ----
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').then(function (reg) {
+      // If a new version is fetched while the app is open, pick it up on next load.
+      reg.addEventListener('updatefound', function () {
+        var w = reg.installing;
+        if (!w) return;
+        w.addEventListener('statechange', function () {
+          if (w.state === 'installed' && navigator.serviceWorker.controller) {
+            var b = document.getElementById('pwaUpdate');
+            if (b) b.style.display = 'inline-block';
+          }
+        });
+      });
+    }).catch(function () { /* offline / unsupported — app still works from cache */ });
+  });
+}
 </script>
 </body>
 </html>

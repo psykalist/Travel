@@ -1,0 +1,19 @@
+{
+  "name": "Palafrugell ↔ Cheltenham Planner",
+  "short_name": "Travel Planner",
+  "description": "Offline journey planner between Palafrugell (Costa Brava) and Cheltenham Spa — all four airport routings, bus/train/flight timetables, buffers and last-connection checks. Works with no signal.",
+  "start_url": ".",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#93b6e2",
+  "theme_color": "#1a53d0",
+  "lang": "en-GB",
+  "categories": ["travel", "navigation", "utilities"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
