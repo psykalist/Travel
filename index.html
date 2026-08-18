@@ -198,6 +198,20 @@ footer { margin-top:26px; font-size:11.5px; color:#8a93a0; border-top:1px solid 
 .ad-note { color:#667; }
 .adtable a { color:#1a53d0; text-decoration:none; font-weight:600; white-space:nowrap; }
 tr.ad-expired td { background:#fef7f7; }
+/* On phones the 6-column source table can't fit — stack each source as a labelled card */
+@media(max-width:640px){
+  .adtable, .adtable tbody, .adtable tr, .adtable td { display:block; width:100%; }
+  .adtable thead { display:none; }
+  .adtable tr { border:1px solid #dce6f5; border-radius:11px; padding:9px 12px; margin-bottom:10px; background:#fff; }
+  .adtable tr.ad-expired { background:#fef7f7; border-color:#f3bcbc; }
+  .adtable tr.ad-soon { border-color:#f0e2c2; }
+  .adtable td { border:none; padding:3px 0; white-space:normal; overflow-wrap:anywhere; }
+  .adtable td.ad-dates, .ad-refresh, .ad-badge { white-space:normal; }
+  .adtable td:empty { display:none; }
+  .adtable td::before { content:attr(data-label); display:block; font-weight:700; color:#8a93a0; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; margin-top:4px; }
+  .adtable td.ad-lab { font-size:14px; }
+  .adtable td.ad-lab::before { display:none; }
+}
 </style>
 </head>
 <body>
@@ -982,12 +996,12 @@ function renderAdmin(){
       ? `<span class="ad-badge soon">⟳ ${rf.t}</span>`
       : `<span class="ad-refresh">${rf.t}</span>`;
     return `<tr class="ad-${st.k}">
-      <td class="ad-lab">${s.label}${s.unconfirmed?' <span class="ad-unc">unconfirmed</span>':''}</td>
-      <td><span class="ad-badge ${st.k}">${st.k==='expired'?'⚠ expired':st.k==='soon'?'● soon':'✓ ok'}</span></td>
-      <td class="ad-dates">${st.t}</td>
-      <td class="ad-dates">${rfCell}</td>
-      <td class="ad-note">${s.note||''}</td>
-      <td>${link}</td></tr>`;
+      <td class="ad-lab" data-label="Timetable">${s.label}${s.unconfirmed?' <span class="ad-unc">unconfirmed</span>':''}</td>
+      <td data-label="Status"><span class="ad-badge ${st.k}">${st.k==='expired'?'⚠ expired':st.k==='soon'?'● soon':'✓ ok'}</span></td>
+      <td class="ad-dates" data-label="Validity">${st.t}</td>
+      <td class="ad-dates" data-label="Next refresh">${rfCell}</td>
+      <td class="ad-note" data-label="Notes">${s.note||''}</td>
+      <td data-label="Source">${link}</td></tr>`;
   }).join('');
   const need=DATA.sources.filter(s=>{const k=srcStatus(s).k;return k==='expired'||k==='soon';}).length;
   const due=DATA.sources.filter(s=>srcRefresh(s).due).length;
@@ -1000,8 +1014,9 @@ function renderAdmin(){
 }
 
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "3.3";
+const VERSION = "3.4";
 const CHANGELOG = [
+  ["3.4","2026-08-18","Mobile fix for the Admin data-source tracker: on phones the six-column table no longer overflows its card (which pushed the status pills past the border). Each source now stacks into its own labelled card — Timetable, Status, Validity, Next refresh, Notes, Source — so everything stays inside the panel and is readable without zooming."],
   ["3.3","2026-08-18","The ? panel now lists every timetable the planner relies on, grouped by journey stage (airport buses in Spain, the flights/all airlines, UK airport-to-Cheltenham buses & trains, exchange rate). Each shows an ok/due/expired status, its valid-to date, the next auto-check date (all DD/MM/YYYY), an ‘unconfirmed’ flag where relevant, and a link to the official source — so a stale or wrong leg is easy to spot before you rely on it."],
   ["3.2","2026-08-18","Admin panel: all dates now show as DD/MM/YYYY — the Validity column (‘valid to’ / ‘expires in’) matches the Next refresh column instead of ISO format."],
   ["3.1","2026-08-18","Reliability + mobile fixes. Offline caching now fetches the live page first whenever you have signal (so updates show immediately instead of a version behind). The four routing cards stack into a single column on phones so nothing runs off the screen. Admin 'Next refresh' dates now show as DD/MM/YYYY."],
