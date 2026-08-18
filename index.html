@@ -26,6 +26,15 @@ body { margin:0; background:linear-gradient(180deg,#7ea6d8 0%, #93b6e2 55%, #a7c
 .qbtn:hover { background:#dbe8fb; }
 .infopanel { background:#eef4ff; border:1px solid #cfe0f7; border-radius:12px; padding:12px 14px; margin-bottom:14px; }
 .infopanel .sub { margin:0 0 8px; }
+.infosrc { margin-top:10px; }
+.infosrc > p { font-size:12px; color:#556; margin:2px 0 8px; }
+.infosrc h3 { font-size:11.5px; text-transform:uppercase; letter-spacing:.5px; color:#8a93a0; margin:12px 0 4px; }
+.isrc { display:flex; flex-wrap:wrap; align-items:baseline; gap:3px 8px; padding:7px 0; border-top:1px solid #dbe7f7; }
+.isrc-h { font-weight:600; font-size:13px; color:#1c1e21; flex:1 1 100%; }
+.isrc-meta { font-size:12px; color:#556; font-variant-numeric:tabular-nums; }
+.isrc-meta .sep { color:#aeb8c6; margin:0 5px; }
+.isrc-meta .due { color:#b26a00; font-weight:700; }
+.isrc a { font-size:12px; color:#1a53d0; text-decoration:none; font-weight:600; white-space:nowrap; margin-left:auto; }
 h1 { font-size:22px; margin:0 0 2px; letter-spacing:-0.2px; }
 .sub { color:#5b6470; font-size:13.5px; margin:0 0 14px; }
 .stamp { background:#eef1f6; border-radius:20px; padding:4px 12px; font-size:12.5px; color:#667; display:inline-block; margin-bottom:14px; }
@@ -199,8 +208,12 @@ tr.ad-expired td { background:#fef7f7; }
   </div>
   <div id="infopanel" class="infopanel" style="display:none">
     <p class="sub">Every leg, both directions, all four airport routings, with an indicative cost per trip. Timetables &amp; fares refresh weekly in the background; flight prices link out live.</p>
-    <span class="stamp">Timetables &amp; fares last refreshed: <b id="stamp">&mdash;</b></span>
+    <span class="stamp">Timetables &amp; fares last checked: <b id="stamp">&mdash;</b></span>
     <span class="stamp">Version <b id="ver">&mdash;</b></span>
+    <div class="infosrc">
+      <p><b>Every timetable this planner uses, and how current each one is.</b> A background task re-checks each source every Monday and only replaces a sheet once a newer one is due; it messages Kieran if anything changed or couldn't be confirmed. If a row shows <b>⚠ expired</b> or <span class="ad-unc">unconfirmed</span>, treat that leg with caution and tap through to the official source.</p>
+      <div id="infosources"></div>
+    </div>
   </div>
 
   <div class="prefs">
@@ -921,6 +934,44 @@ function srcRefresh(s){
   const d=new Date(exp); d.setDate(d.getDate()-REFRESH_LEAD);
   return {due:false, t:ddmmyy(d)};
 }
+// plain-language description of the leg each data source powers (for the ? panel)
+const SRC_DESC = {
+  bus_gro:     "🚌 Coach — Palafrugell ⇄ Girona bus station (Moventis 5/41/42)",
+  bus_gro_air: "🚌 Bus — Girona station ⇄ Girona Airport (Sagalés line 607)",
+  bus_bcn:     "🚌 Coach — Palafrugell ⇄ Barcelona Airport (Moventis line 1, direct)",
+  fl_gro:      "✈️ Flights — Girona ↔ Bristol / Birmingham (Ryanair, summer)",
+  fl_bcn:      "✈️ Flights — Barcelona ↔ Bristol / Birmingham (Jet2, Vueling, easyJet, Ryanair)",
+  flyer:       "🚌 Bus — Bristol Airport ⇄ Bristol Temple Meads (Airport Flyer A1)",
+  trains:      "🚆 Trains — Bristol & Birmingham ⇄ Cheltenham Spa (via Birmingham New St)",
+  fx:          "💱 EUR → GBP rate — used for the cost estimates"
+};
+// grouped in the ? panel by journey stage
+const SRC_GROUPS = [
+  ["Getting to the airport (Spain)", ["bus_gro","bus_gro_air","bus_bcn"]],
+  ["The flight — all airlines",       ["fl_gro","fl_bcn"]],
+  ["Airport to Cheltenham (UK)",      ["flyer","trains"]],
+  ["Exchange rate",                   ["fx"]]
+];
+function renderInfoSources(){
+  const host=document.getElementById('infosources'); if(!host) return;
+  const byId=Object.fromEntries(DATA.sources.map(s=>[s.id,s]));
+  host.innerHTML = SRC_GROUPS.map(([title,ids])=>{
+    const items = ids.map(id=>byId[id]).filter(Boolean).map(s=>{
+      const st=srcStatus(s), rf=srcRefresh(s);
+      const badge=`<span class="ad-badge ${st.k}">${st.k==='expired'?'⚠ expired':st.k==='soon'?'● due soon':'✓ ok'}</span>`;
+      const valid = s.validTo ? 'valid to '+ddmmyy(new Date(s.validTo+'T00:00:00')) : 'ongoing service';
+      const nextc = rf.due ? `<span class="due">${rf.t}</span>` : ('next check '+rf.t);
+      const unc = s.unconfirmed ? ' <span class="ad-unc">unconfirmed</span>' : '';
+      const link = s.src ? `<a href="${s.src}" target="_blank" rel="noopener">official ↗</a>` : '';
+      return `<div class="isrc">
+        <div class="isrc-h">${SRC_DESC[s.id]||s.label}${unc}</div>
+        ${badge}
+        <span class="isrc-meta">${valid}<span class="sep">·</span>${nextc}</span>
+        ${link}</div>`;
+    }).join('');
+    return `<h3>${title}</h3>${items}`;
+  }).join('');
+}
 function renderAdmin(){
   const host=document.getElementById('admin'); if(!host) return;
   const rows=DATA.sources.map(s=>{
@@ -949,8 +1000,9 @@ function renderAdmin(){
 }
 
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "3.2";
+const VERSION = "3.3";
 const CHANGELOG = [
+  ["3.3","2026-08-18","The ? panel now lists every timetable the planner relies on, grouped by journey stage (airport buses in Spain, the flights/all airlines, UK airport-to-Cheltenham buses & trains, exchange rate). Each shows an ok/due/expired status, its valid-to date, the next auto-check date (all DD/MM/YYYY), an ‘unconfirmed’ flag where relevant, and a link to the official source — so a stale or wrong leg is easy to spot before you rely on it."],
   ["3.2","2026-08-18","Admin panel: all dates now show as DD/MM/YYYY — the Validity column (‘valid to’ / ‘expires in’) matches the Next refresh column instead of ISO format."],
   ["3.1","2026-08-18","Reliability + mobile fixes. Offline caching now fetches the live page first whenever you have signal (so updates show immediately instead of a version behind). The four routing cards stack into a single column on phones so nothing runs off the screen. Admin 'Next refresh' dates now show as DD/MM/YYYY."],
   ["3.0","2026-08-18","Now an installable offline app (PWA): add it to your phone's home screen and it opens with no signal — every timetable, schedule, cost estimate, buffer and last-connection check works offline (only live 'book this flight' links need a connection). Added a web manifest, app icons and a service worker that serves instantly from cache and quietly updates in the background when you're online. Admin panel gains a 'Next refresh' column showing exactly when each source is next due to be auto-pulled, plus a clearer note that the weekly task refreshes sources on its own and only messages you if something changed or couldn't be confirmed."],
@@ -996,7 +1048,7 @@ function applyPrefsUI(){
 function render(){
   applyPrefsUI();
   saveState();
-  document.getElementById('stamp').textContent = DATA.lastUpdated;
+  document.getElementById('stamp').textContent = ddmmyy(new Date(DATA.lastUpdated+'T00:00:00'));
   const outOrder=['gro_brs','gro_bhx','bcn_brs','bcn_bhx'], homeOrder=['brs_gro','bhx_gro','brs_bcn','bhx_bcn'];
   renderCompare('compare-out','out',outOrder);
   renderCompare('compare-home','home',homeOrder);
@@ -1012,6 +1064,7 @@ function render(){
   });
   renderItinerary();
   renderBusTimes();
+  renderInfoSources();
   renderAdmin();
   document.getElementById('ver').textContent = VERSION;
   const clog = CHANGELOG.map(c=>`<li><b>v${c[0]}</b> <span style="color:#aab">${c[1]}</span> — ${c[2]}</li>`).join('');
