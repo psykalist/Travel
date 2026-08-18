@@ -39,7 +39,8 @@ h1 { font-size:22px; margin:0 0 2px; letter-spacing:-0.2px; }
   .btn { padding:9px 15px; font-size:14px; }
   .drow { padding:8px 11px; }
   .drow a { font-size:13px; }
-  .cmp { padding:13px 15px; }
+  .cmp { padding:13px 15px; min-width:0; }
+  .cmpgrid { grid-template-columns:1fr; }
   .tab { padding:13px; }
   .field input, .field select { padding:7px 9px; font-size:14px; }
   .backbtn { padding:10px 15px; }
@@ -906,9 +907,10 @@ function srcStatus(s){
 // Policy (mirrors the scheduled task): re-pull once within REFRESH_LEAD days of
 // expiry, or if already expired, or if flagged unconfirmed. Otherwise leave it.
 const REFRESH_LEAD = 14;
+function ddmmyy(d){ const p=n=>String(n).padStart(2,'0'); return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear(); }
 function nextMondayStr(){ const d=new Date(); d.setHours(0,0,0,0);
   const add=((1-d.getDay())+7)%7 || 7; d.setDate(d.getDate()+add);
-  return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }
+  return ddmmyy(d); }
 function srcRefresh(s){
   if(s.unconfirmed) return {due:true, t:'due now — next run '+nextMondayStr()};
   if(!s.validTo)    return {due:false, t:'only if it changes'};
@@ -917,7 +919,7 @@ function srcRefresh(s){
   const days=Math.round((exp-today)/86400000);
   if(days<=REFRESH_LEAD) return {due:true, t:'due now — next run '+nextMondayStr()};
   const d=new Date(exp); d.setDate(d.getDate()-REFRESH_LEAD);
-  return {due:false, t:d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})};
+  return {due:false, t:ddmmyy(d)};
 }
 function renderAdmin(){
   const host=document.getElementById('admin'); if(!host) return;
