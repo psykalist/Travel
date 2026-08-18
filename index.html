@@ -900,8 +900,8 @@ function srcStatus(s){
   const exp=new Date(s.validTo+'T00:00:00');
   const days=Math.round((exp-today)/86400000);
   if(days<0) return {k:'expired', t:`expired ${-days}d ago — refresh`};
-  if(days<=30) return {k:'soon', t:`expires in ${days}d (${s.validTo})`};
-  return {k:'ok', t:`valid to ${s.validTo}`};
+  if(days<=30) return {k:'soon', t:`expires in ${days}d (${ddmmyy(exp)})`};
+  return {k:'ok', t:`valid to ${ddmmyy(exp)}`};
 }
 // When will the weekly auto-refresh task next attempt to re-pull this source?
 // Policy (mirrors the scheduled task): re-pull once within REFRESH_LEAD days of
@@ -949,8 +949,9 @@ function renderAdmin(){
 }
 
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "3.1";
+const VERSION = "3.2";
 const CHANGELOG = [
+  ["3.2","2026-08-18","Admin panel: all dates now show as DD/MM/YYYY — the Validity column (‘valid to’ / ‘expires in’) matches the Next refresh column instead of ISO format."],
   ["3.1","2026-08-18","Reliability + mobile fixes. Offline caching now fetches the live page first whenever you have signal (so updates show immediately instead of a version behind). The four routing cards stack into a single column on phones so nothing runs off the screen. Admin 'Next refresh' dates now show as DD/MM/YYYY."],
   ["3.0","2026-08-18","Now an installable offline app (PWA): add it to your phone's home screen and it opens with no signal — every timetable, schedule, cost estimate, buffer and last-connection check works offline (only live 'book this flight' links need a connection). Added a web manifest, app icons and a service worker that serves instantly from cache and quietly updates in the background when you're online. Admin panel gains a 'Next refresh' column showing exactly when each source is next due to be auto-pulled, plus a clearer note that the weekly task refreshes sources on its own and only messages you if something changed or couldn't be confirmed."],
   ["2.9","2026-08-14","Girona airport ground leg is now modelled as two legs, since direct airport coaches are limited: Palafrugell⇄Girona bus station (Moventis 5/41/42) + Girona station⇄airport (Sagalés line 607, ~hourly, timed to Ryanair). Added the 607 schedule + live link to the bus panel, split the itinerary generator to show both hops each way, and added line 607 to the Admin source tracker and the weekly refresh."],
