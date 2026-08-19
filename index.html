@@ -99,6 +99,52 @@ h1 { font-size:22px; margin:0 0 2px; letter-spacing:-0.2px; }
 .arr.tight { color:#b26a00; }
 .arr.miss { color:#c62828; font-weight:600; }
 
+/* feasibility timeline (project-management popup) */
+.tlbtn { margin-top:10px; background:#1a53d0; color:#fff; border:none; border-radius:9px; padding:8px 14px; font:inherit; font-size:13px; font-weight:700; cursor:pointer; }
+.tlbtn:hover { filter:brightness(1.06); }
+.cmp { position:relative; }
+.tlmini { position:absolute; top:9px; right:10px; background:#eef4ff; border:1px solid #cfdcf5; border-radius:8px; width:30px; height:26px; font-size:14px; cursor:pointer; line-height:1; }
+.tlmini:hover { background:#dbe8fb; }
+.tlmodal { position:fixed; inset:0; background:rgba(18,26,44,.55); display:none; align-items:flex-start; justify-content:center; z-index:100; padding:14px; overflow:auto; }
+.tlmodal.open { display:flex; }
+.tlpanel { background:#fff; border-radius:16px; max-width:840px; width:100%; padding:16px 18px 22px; box-shadow:0 14px 44px rgba(0,0,0,.32); }
+.tlhead { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.tlhead h2 { font-size:17px; margin:0 0 2px; }
+.tlhead .sub2 { font-size:12.5px; color:#667; }
+.tlclose { border:none; background:#eef1f6; width:32px; height:32px; border-radius:50%; font-size:18px; cursor:pointer; color:#445; flex:none; }
+.tlctrl { display:flex; flex-wrap:wrap; gap:6px 8px; align-items:center; margin:12px 0; }
+.tlchip { border:1px solid #cfd8e6; background:#fff; border-radius:16px; padding:5px 11px; font-size:12.5px; font-weight:600; color:#3a4657; cursor:pointer; }
+.tlchip.on { background:#1a53d0; color:#fff; border-color:#1a53d0; }
+.tldate { display:flex; align-items:center; gap:6px; margin-left:auto; font-size:13px; font-weight:600; color:#334; }
+.tldate button { border:1px solid #cfd8e6; background:#fff; border-radius:8px; width:28px; height:28px; cursor:pointer; font-size:15px; line-height:1; }
+.tllegend { display:flex; flex-wrap:wrap; gap:6px 16px; font-size:11.5px; color:#556; margin:6px 0 10px; }
+.tllegend span { display:inline-flex; align-items:center; gap:5px; }
+.tldot { width:12px; height:12px; border-radius:3px; display:inline-block; }
+.tldot.go{background:#3ca66a} .tldot.lim{background:#e0a52e} .tldot.no{background:#d9534f}
+.tlaxis { position:relative; height:16px; margin-top:6px; }
+.tltick { position:absolute; top:0; transform:translateX(-50%); font-size:10px; color:#9aa3b0; font-variant-numeric:tabular-nums; }
+.tlribbon { position:relative; height:24px; border-radius:6px; overflow:hidden; background:#eef1f6; }
+.tlzone { position:absolute; top:0; bottom:0; }
+.tlzone.go{background:#d6efdf} .tlzone.lim{background:#fbeccb} .tlzone.no{background:#f7d7d5}
+.tlribwrap { margin-bottom:6px; }
+.tlriblab { font-size:11px; color:#8a93a0; margin:8px 0 2px; }
+.tlrow { border:1px solid #e4e9f1; border-left-width:4px; border-radius:10px; padding:8px 10px; margin-bottom:8px; }
+.tlrow.go{border-left-color:#3ca66a} .tlrow.lim{border-left-color:#e0a52e} .tlrow.no{border-left-color:#d9534f}
+.tlrow-h { display:flex; flex-wrap:wrap; align-items:center; gap:5px 8px; font-size:12.8px; margin-bottom:6px; }
+.tlpill { border-radius:6px; padding:1px 8px; font-size:11px; font-weight:700; color:#fff; }
+.tlpill.go{background:#3ca66a} .tlpill.lim{background:#e0a52e} .tlpill.no{background:#d9534f}
+.tlwhy { color:#8a6d2f; font-size:11.5px; }
+.tlrow.no .tlwhy{ color:#c0392b; }
+.tltrack { position:relative; height:20px; background:#f4f6f9; border-radius:5px; }
+.tlleg { position:absolute; top:2px; height:16px; border-radius:3px; font-size:9px; line-height:16px; color:#fff; overflow:hidden; white-space:nowrap; padding:0 3px; }
+.tlleg.bus{background:#7d8fb8} .tlleg.wait{background:#b6bdc9;color:#465} .tlleg.tr{background:#7d8fb8} .tlleg.trn{background:#5a86bd}
+.tlleg.fly.go{background:#3ca66a} .tlleg.fly.lim{background:#e0a52e} .tlleg.fly.no{background:#d9534f}
+.tlcut { position:absolute; top:-3px; bottom:-3px; width:0; border-left:2px dashed #d9534f; }
+.tlcutlab { position:absolute; top:-16px; transform:translateX(-50%); font-size:9.5px; color:#c0392b; white-space:nowrap; }
+.tlnote { font-size:11.5px; color:#667; margin-top:8px; }
+.tlnoflight { background:#fdecec; border:1px solid #f3bcbc; color:#8f2020; border-radius:10px; padding:10px 12px; font-size:13px; }
+@media(max-width:640px){ .tlpanel{ padding:14px 12px 20px; } .tldate{ margin-left:0; } }
+
 /* itinerary card */
 .planlink { display:inline-block; background:linear-gradient(120deg,#0d7a4f,#0a5f3e); color:#fff !important; border-radius:8px; padding:4px 12px; font-weight:700 !important; font-size:12.5px; text-decoration:none; box-shadow:0 2px 6px rgba(13,122,79,.25); }
 .planlink:hover { filter:brightness(1.1); }
@@ -303,6 +349,10 @@ tr.ad-expired td { background:#fef7f7; }
 
   <div id="bustimes"></div>
   <footer id="foot"></footer>
+</div>
+
+<div id="tlmodal" class="tlmodal" onclick="if(event.target===this)closeTimeline()">
+  <div class="tlpanel" id="tlpanel"></div>
 </div>
 
 <script>
@@ -767,6 +817,7 @@ function renderCompare(hostId, side, order){
         <div class="cmp-h"><b>${ROUTELABEL[key]}</b></div>
         <div class="cmp-air">flight ${o} → ${d} · then ${groundDesc(key)}</div>
         <div class="cmp-cost">${gbp(lh[0]*p)}–${gbp(lh[1]*p)} <span>${word}${p>1?' · '+p+'p':''} · typical</span></div>
+        <button class="tlbtn" onclick="openTimeline('${key}','${side}')">📊 Feasibility timeline</button>
       </div></div>`;
     return;
   }
@@ -809,6 +860,7 @@ function renderCompare(hostId, side, order){
     const good = x.flies && x.lh[0] <= minLow*1.05;
     const badge = good ? `<span class="goodbadge">✓ Good value</span>` : '';
     return `<div class="cmp${good?' good':''}${x.flies?'':' muted'}" onclick="pickRoute('${side}','${x.key}')">
+      <button class="tlmini" onclick="event.stopPropagation();openTimeline('${x.key}','${side}')" title="Feasibility timeline">📊</button>
       <div class="cmp-h"><b>${ROUTELABEL[x.key]}</b> ${badge}</div>
       <div class="cmp-air">${x.o} → ${x.d} · ~${fmtDur(x.tmins)}</div>
       <div class="cmp-body">${body}</div>${arrLine}${also}
@@ -818,6 +870,133 @@ function renderCompare(hostId, side, order){
   host.innerHTML = `<div class="cmpwrap">
     <div class="cmp-title">Compare all four — flights on <b>${niceDate(focus)}</b>${datemode()==='single'?'':' (first day of your range)'}. Tap one to see just its transfers &amp; options. <span style="color:#0d7a4f">Green = cheapest on typical fares</span> (confirm with live prices).</div>
     <div class="cmpgrid">${cards}</div></div>`;
+}
+
+// ============================================================================
+// FEASIBILITY TIMELINE — project-management style popup, per routing
+// ============================================================================
+const TLKEYS = { out:['gro_brs','gro_bhx','bcn_brs','bcn_bhx'], home:['brs_gro','bhx_gro','brs_bcn','bhx_bcn'] };
+const tlState = { key:'gro_brs', side:'out', date:null };
+const TL_AX0=180, TL_AX1=1440;                       // axis 03:00 → 24:00
+function tlx(m){ return Math.max(0,Math.min(100,(m-TL_AX0)/(TL_AX1-TL_AX0)*100)); }
+function parseHM(s){ if(!s) return null; const m=/(\d{1,2}):(\d{2})/.exec(s); return m?(+m[1])*60+(+m[2]):null; }
+
+function openTimeline(key, side){
+  tlState.side = side || 'out';
+  tlState.key  = key;
+  tlState.date = firstDateFor(tlState.side);
+  document.getElementById('tlmodal').classList.add('open');
+  renderTimeline();
+}
+function closeTimeline(){ document.getElementById('tlmodal').classList.remove('open'); }
+function tlSetSide(side){
+  if(side===tlState.side) return;
+  const i=TLKEYS[tlState.side].indexOf(tlState.key);         // keep the same routing on the other side
+  tlState.side=side; tlState.key=TLKEYS[side][i<0?0:i]; tlState.date=firstDateFor(side); renderTimeline();
+}
+function tlSetKey(key){ tlState.key=key; renderTimeline(); }
+function tlStep(n){ const d=new Date(tlState.date+'T00:00:00'); d.setDate(d.getDate()+n); tlState.date=ymd(d); renderTimeline(); }
+
+// zone cut-offs (in DEPARTURE-time minutes) for the chosen routing/direction
+function tlFeas(key, side){
+  const [o,d]=IATA[key]; const sk=SCHEDKEY[key]; const dir=side==='out'?'su':'us';
+  const busK=COMPOSE[key][0]; const busMin=BUSMIN[busK]||90; const flightMin=FLIGHTMIN[sk]||120;
+  const hop=HOP[d]; const lastDep=toMin(hop.lastDep);
+  const transfer=hop.deplane+hop.toStation;
+  const depMaxGreen=lastDep-45-transfer-flightMin;
+  const depMaxAmber=lastDep-15-transfer-flightMin;
+  let earliestGo, ukPre=0;
+  if(side==='out'){ const bk=busK.replace('bus_',''); const fb=parseHM((DATA.buses[bk]||{}).first); earliestGo=(fb!=null?fb:300)+busMin+120; }
+  else { const uk=HOP[o]; ukPre=uk?(uk.train+uk.wait+uk.toStation):120; earliestGo=300+ukPre+120; }
+  return {o,d,sk,dir,busK,busMin,flightMin,hop,lastDep,transfer,depMaxGreen,depMaxAmber,earliestGo,ukPre};
+}
+function tlFlight(f, F, side){
+  const depM=toMin(f.dep);
+  const arrStr=f.arr || fromMin(depM+F.flightMin).slice(0,5);
+  const arrM=toMin(arrStr);
+  const ai=arrivalInfo(F.d, arrStr);
+  let st='go'; const why=[];
+  if(!ai || ai.status==='miss'){ st='no'; why.push(ai?ai.conn:'no onward connection'); }
+  else if(ai.status==='tight'){ st='lim'; why.push(ai.conn); }
+  if(side==='out'){ const bk=F.busK.replace('bus_',''); const fb=parseHM((DATA.buses[bk]||{}).first); const busDep=depM-120-F.busMin;
+    if(fb!=null && busDep<fb && st!=='no'){ st='lim'; why.push('earliest coach is ~'+fromMin(fb).slice(0,5)+' — you’d need a taxi'); } }
+  if(inWindow(f.dep)===false && st==='go'){ st='lim'; why.push('outside your daytime window'); }
+  // gantt segments
+  const h=F.hop; const ready=arrM+h.deplane+h.toStation; const trainStart=ready+h.wait; const finalM=ai?ai.finalMin:trainStart+h.train;
+  let segs;
+  if(side==='out'){
+    segs=[ {a:depM-120-F.busMin,b:depM-120,c:'bus',t:'coach'},
+           {a:depM-120,b:depM,c:'wait',t:'check-in'},
+           {a:depM,b:arrM,c:'fly',t:'flight'},
+           {a:arrM,b:ready,c:'tr',t:'land→stn'},
+           {a:trainStart,b:finalM,c:'trn',t:'train'} ];
+  } else {
+    segs=[ {a:depM-120-F.ukPre,b:depM-120,c:'trn',t:'to airport'},
+           {a:depM-120,b:depM,c:'wait',t:'check-in'},
+           {a:depM,b:arrM,c:'fly',t:'flight'},
+           {a:arrM,b:ready,c:'tr',t:'arrive'},
+           {a:trainStart,b:finalM,c:'trn',t:'coach home'} ];
+  }
+  return {depM,arrStr,arrM,ai,st,why,finalM,segs};
+}
+
+function renderTimeline(){
+  const {key,side,date}=tlState; const F=tlFeas(key,side);
+  const dow=new Date(date+'T00:00:00').getDay();
+  const svcs=(DATA.sched[F.sk]||{})[F.dir]||[];
+  const timed=svcs.filter(s=>s.dep && s.days.includes(dow)).sort((a,b)=>toMin(a.dep)-toMin(b.dep));
+  const others=svcs.filter(s=>!s.dep && s.days.includes(dow));
+  const anyApprox=timed.some(s=>s.approx);
+
+  // routing + direction switchers
+  const keyChips=TLKEYS[side].map(k=>`<button class="tlchip${k===key?' on':''}" onclick="tlSetKey('${k}')">${ROUTELABEL[k]}</button>`).join('');
+  const sideChips=`<button class="tlchip${side==='out'?' on':''}" onclick="tlSetSide('out')">Outbound</button>`+
+                  `<button class="tlchip${side==='home'?' on':''}" onclick="tlSetSide('home')">Homebound</button>`;
+
+  // feasibility ribbon zones (by departure time)
+  const zone=(a,b,c)=>{ a=Math.max(a,TL_AX0); b=Math.min(b,TL_AX1); if(b<=a) return ''; return `<div class="tlzone ${c}" style="left:${tlx(a)}%;width:${tlx(b)-tlx(a)}%"></div>`; };
+  const ribbon = zone(TL_AX0,F.earliestGo,'lim')+zone(F.earliestGo,F.depMaxGreen,'go')+zone(F.depMaxGreen,F.depMaxAmber,'lim')+zone(F.depMaxAmber,TL_AX1,'no');
+  const ticks=[3,6,9,12,15,18,21,24].map(h=>`<span class="tltick" style="left:${tlx(h*60)}%">${String(h).padStart(2,'0')}</span>`).join('');
+
+  // gantt rows
+  let rows;
+  if(!timed.length){
+    rows=`<div class="tlnoflight">No fixed-time ${F.o}→${F.d} flight on ${DOW[dow]} — this routing is a <b>no-go</b> that day.${others.length?` Carriers with day-varying times (${others.map(s=>s.carrier).join(', ')}) may still fly — check the flight options list.`:''}</div>`;
+  } else {
+    rows=timed.map(s=>{
+      const r=tlFlight(s,F,side);
+      const bars=r.segs.map(g=>{ const L=tlx(g.a), W=tlx(g.b)-tlx(g.a); if(W<=0) return ''; const cls=g.c==='fly'?`fly ${r.st}`:g.c; return `<div class="tlleg ${cls}" style="left:${L}%;width:${W}%" title="${g.t}">${W>7?g.t:''}</div>`; }).join('');
+      const cut=`<div class="tlcut" style="left:${tlx(F.lastDep)}%"></div><div class="tlcutlab" style="left:${tlx(F.lastDep)}%">last ${F.hop.mode} ${F.hop.lastDep}</div>`;
+      const stTxt=r.st==='go'?'connects':r.st==='lim'?'limited':'no-go';
+      const arrTxt=r.ai?`→ ${r.ai.dest} ~${r.ai.finalStr}`:'';
+      return `<div class="tlrow ${r.st}">
+        <div class="tlrow-h">${carrierBadge(s.carrier)}<b>${s.dep}${s.approx?'*':''} → ${r.arrStr}${s.approx?'*':''}</b>
+          <span class="tlpill ${r.st}">${stTxt}</span>
+          <span class="cmptime" style="color:#556">${arrTxt}</span>
+          ${r.why.length?`<span class="tlwhy">${r.why.join(' · ')}</span>`:''}</div>
+        <div class="tltrack">${bars}${cut}</div></div>`;
+    }).join('');
+  }
+
+  document.getElementById('tlpanel').innerHTML = `
+    <div class="tlhead"><div>
+      <h2>Feasibility timeline</h2>
+      <div class="sub2">${ROUTELABEL[key]} · door-to-door connections on <b>${niceDate(date)}</b></div>
+    </div><button class="tlclose" onclick="closeTimeline()" aria-label="Close">×</button></div>
+    <div class="tlctrl">${sideChips}<span style="width:8px"></span>${keyChips}
+      <span class="tldate"><button onclick="tlStep(-1)" aria-label="Previous day">‹</button>${niceDate(date)}<button onclick="tlStep(1)" aria-label="Next day">›</button></span></div>
+    <div class="tllegend">
+      <span><i class="tldot go"></i> Green — every coach, flight &amp; train connects with margin</span>
+      <span><i class="tldot lim"></i> Amber shoulder — works but tight/limited (a slipped connection bites)</span>
+      <span><i class="tldot no"></i> Red — misses the last onward connection / no service</span></div>
+    <div class="tlribwrap">
+      <div class="tlriblab">Departure feasibility across the day (by flight departure time)</div>
+      <div class="tlribbon">${ribbon}</div>
+      <div class="tlaxis">${ticks}</div>
+    </div>
+    <div class="tlriblab">Each flight, as a full chain — coach · check-in · flight · transfer · train:</div>
+    ${rows}
+    <div class="tlnote">Times use published schedules and the app’s transfer buffers (2h airport check-in, deplane/rail transfers, last-connection cut-offs). ${anyApprox?'* flight time varies by day — confirm on booking. ':''}Green/amber/red reflect whether the <b>onward connection</b> is made; always verify live times and fares before booking.</div>`;
 }
 
 // ============================================================================
@@ -1025,8 +1204,9 @@ function renderAdmin(){
 }
 
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "3.5";
+const VERSION = "3.6";
 const CHANGELOG = [
+  ["3.6","2026-08-18","New Feasibility Timeline popup (a project-management view) for each of the four routings, both directions. It shows a colour-coded ribbon across the day — green where every coach/flight/train connects with margin, an amber ‘shoulder’ where it works but is tight/limited, and red where you’d miss the last onward connection or there’s no service — plus a Gantt row per flight drawing the full coach · check-in · flight · transfer · train chain against a last-connection cut-off line. Open it from the 📊 button on any routing card; switch routing, direction and date inside."],
   ["3.5","2026-08-18","Removed the duplicate data-source list. The separate Admin panel is gone; the single source of truth is now the grouped checklist inside the ? panel, which also gained a status summary line, each source's note, and per-leg validity / next-refresh dates and official links."],
   ["3.4","2026-08-18","Mobile fix for the Admin data-source tracker: on phones the six-column table no longer overflows its card (which pushed the status pills past the border). Each source now stacks into its own labelled card — Timetable, Status, Validity, Next refresh, Notes, Source — so everything stays inside the panel and is readable without zooming."],
   ["3.3","2026-08-18","The ? panel now lists every timetable the planner relies on, grouped by journey stage (airport buses in Spain, the flights/all airlines, UK airport-to-Cheltenham buses & trains, exchange rate). Each shows an ok/due/expired status, its valid-to date, the next auto-check date (all DD/MM/YYYY), an ‘unconfirmed’ flag where relevant, and a link to the official source — so a stale or wrong leg is easy to spot before you rely on it."],
