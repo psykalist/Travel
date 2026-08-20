@@ -363,6 +363,7 @@ tr.ad-expired td { background:#fef7f7; }
   </section>
 
   <div id="bustimes"></div>
+  <div id="traintimes"></div>
   <footer id="foot"></footer>
 </div>
 
@@ -393,11 +394,11 @@ const DATA = {
   },
   bristol: {
     flyer: { name:"Airport Flyer A1", freq:"Every 8–12 min peak, hourly overnight (24h)", dur:"30–40 min", fare:"£9.50" },
-    train: { op:"CrossCountry / GWR", freq:"~Every 30–60 min", dur:"37–60 min", last:"~23:00", fare:"£6–14" }
+    train: { op:"CrossCountry / GWR / TfW", freq:"~2–3/hr (every 20–30 min)", dur:"38–49 min", last:"23:21", fare:"£4–17" }
   },
   birmingham: {
     shuttle: { op:"WMR / XC / Avanti", freq:"Every 5–10 min", dur:"9–15 min", fare:"£3.50–6" },
-    train: { op:"CrossCountry", freq:"~Every 30 min", dur:"38–48 min", last:"~22:12", fare:"£6–16" }
+    train: { op:"CrossCountry / GWR / WMR", freq:"~2–3/hr (every 20–30 min)", dur:"38–53 min", last:"23:37", fare:"£6–35" }
   },
 
   // FLIGHT SCHEDULES — days (0=Sun..6=Sat) + times. su = Spain→UK (outbound), us = UK→Spain (home).
@@ -463,6 +464,27 @@ const DATA = {
     }
   },
 
+  // UK TRAIN TIMES — Cheltenham Spa ⇄ Bristol Temple Meads / Birmingham New Street.
+  // Representative weekday clock-face pattern anchored to the operators' real first/last & frequency
+  // (pulled Aug 2026). UK trains run at regular intervals; exact minutes vary by day/operator — confirm live.
+  trainTimes: {
+    note: "Typical weekday pattern (regular-interval services) — first/last & frequency are the operators'; exact departures vary day to day, so tap the live link to confirm. Pulled Aug 2026.",
+    bristol: {
+      label: "Cheltenham Spa ⇄ Bristol Temple Meads · CrossCountry / GWR / TfW · 38–49 min · ~47 trains/day. For Bristol Airport, change at Temple Meads for the Flyer A1.",
+      toDest: ["05:38","06:29","06:52","07:29","07:52","08:29","08:52","09:29","09:52","10:29","10:52","11:29","11:52","12:29","12:52","13:29","13:52","14:29","14:52","15:29","15:52","16:29","16:52","17:29","17:52","18:29","18:52","19:29","19:52","20:29","20:52","21:29","21:52","22:29","22:52","23:29","23:52","00:02"],
+      toPal:  ["06:08","07:00","07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00","19:30","20:00","20:30","21:00","21:30","22:00","22:30","23:21"],
+      note: "→ row = Cheltenham → Bristol (first 05:38, last 00:02). Return row = Bristol → Cheltenham (first 06:08, last 23:21). Plus a slower ~hourly service via Gloucester.",
+      src: "https://www.thetrainline.com/train-times/cheltenham-spa-to-bristol-temple-meads"
+    },
+    birmingham: {
+      label: "Cheltenham Spa ⇄ Birmingham New Street · CrossCountry / GWR / West Midlands · 38–53 min · ~47 trains/day. For Birmingham Airport, stay on to Birmingham International (Air-Rail Link).",
+      toDest: ["06:15","07:12","07:40","08:12","08:40","09:12","09:40","10:12","10:40","11:12","11:40","12:12","12:40","13:12","13:40","14:12","14:40","15:12","15:40","16:12","16:40","17:12","17:40","18:12","18:40","19:12","19:40","20:12","20:40","21:12","21:40","22:12","22:40","23:12","23:40","00:02"],
+      toPal:  ["05:00","06:12","06:30","06:42","07:12","07:30","07:42","08:12","08:30","08:42","09:12","09:30","09:42","10:12","10:30","10:42","11:12","11:30","11:42","12:12","12:30","12:42","13:12","13:30","13:42","14:12","14:30","14:42","15:12","15:30","15:42","16:12","16:30","16:42","17:12","17:30","17:42","18:12","18:30","18:42","19:12","19:30","19:42","20:12","20:30","20:42","21:12","21:30","21:42","22:12","22:30","22:42","23:37"],
+      note: "→ row = Cheltenham → Birmingham (first 06:15, last 00:02). Return row = Birmingham → Cheltenham (first 05:00, last 23:37).",
+      src: "https://www.thetrainline.com/train-times/cheltenham-spa-to-birmingham-new-street"
+    }
+  },
+
   // DATA SOURCE REGISTRY — validity/expiry of each static timetable (drives the Admin panel).
   // validTo = last day the printed timetable is valid (YYYY-MM-DD), or null for ongoing/frequency services.
   sources: [
@@ -481,8 +503,8 @@ const DATA = {
       src:"https://corporate.ryanair.com/news/ryanair-launches-summer-2026-schedule-at-bristol/", note:"Summer-only season"},
     {id:"fl_bcn",  label:"Barcelona ↔ Bristol / Birmingham flights", validFrom:"2026-08-14", validTo:"2026-10-24",
       src:"https://www.flightsfrom.com/BCN-BHX", note:"BCN⇄BHX Jet2/Vueling/easyJet/Ryanair times pulled from FlightsFrom (summer wk of 14 Aug); times shift day-to-day so shown as approx — winter schedule from late Oct", unconfirmed:true},
-    {id:"trains",  label:"UK rail · Bristol/Birmingham ↔ Cheltenham", validFrom:null, validTo:"2026-12-13",
-      src:"https://www.nationalrail.co.uk", note:"UK national timetable change (~May & Dec)"},
+    {id:"trains",  label:"UK rail · Bristol/Birmingham ↔ Cheltenham", validFrom:"2026-08-18", validTo:"2026-12-13",
+      src:"https://www.thetrainline.com/train-times/cheltenham-spa-to-bristol-temple-meads", note:"Representative weekday pattern + real first/last & frequency pulled Aug 2026 (CrossCountry/GWR/TfW/WMR). Valid until the Dec UK timetable change."},
     {id:"fx",      label:"EUR → GBP exchange rate", validFrom:null, validTo:null,
       src:"", note:"Drifts continuously; refreshed weekly"}
   ],
@@ -586,8 +608,8 @@ function niceDate(s){ return new Date(s+"T00:00:00").toLocaleDateString('en-GB',
 // ---- journey timing (approximate) for arrival, last-connection & total time ----
 // deplane = time from landing to being on the onward service; train = onward ride to final town.
 const HOP = {
-  BRS:{deplane:45,toStation:50,wait:20,train:50,lastDep:"23:00",dest:"Cheltenham",mode:"train"},   // Flyer + Temple Meads
-  BHX:{deplane:40,toStation:27,wait:15,train:45,lastDep:"22:12",dest:"Cheltenham",mode:"train"},   // Air-Rail + New St
+  BRS:{deplane:45,toStation:50,wait:20,train:50,lastDep:"23:21",dest:"Cheltenham",mode:"train"},   // Flyer + Temple Meads; last BRS→CNM train 23:21
+  BHX:{deplane:40,toStation:27,wait:15,train:45,lastDep:"23:37",dest:"Cheltenham",mode:"train"},   // Air-Rail + New St; last BHX→CNM train 23:37
   GRO:{deplane:30,toStation:5,wait:15,train:65,lastDep:"22:00",dest:"Palafrugell",mode:"coach"},
   BCN:{deplane:45,toStation:5,wait:20,train:140,lastDep:"23:25",dest:"Palafrugell",mode:"coach"}
 };
@@ -1176,6 +1198,25 @@ function renderBusTimes(){
   </details>`;
 }
 
+// ---- train timetables panel (Cheltenham ⇄ Bristol / Birmingham) ----
+function renderTrains(){
+  const host=document.getElementById('traintimes'); if(!host) return;
+  const T=DATA.trainTimes;
+  const chips=a=>a.map(t=>`<span class="bt">${t}</span>`).join('');
+  function block(x, destName, retName){
+    return `<div class="btblock"><div class="btlabel">${x.label}</div>
+      <div class="btrow"><span class="btdir">→ ${destName}</span>${chips(x.toDest)}</div>
+      <div class="btrow"><span class="btdir">→ ${retName}</span>${chips(x.toPal)}</div>
+      ${x.note?`<div class="btnote">${x.note}</div>`:''}
+      <a class="btsrc" href="${x.src}" target="_blank" rel="noopener">live times ↗</a></div>`;
+  }
+  host.innerHTML = `<details class="btwrap"><summary>🚆 Train timetables — Cheltenham ⇄ Bristol / Birmingham</summary>
+    <div class="btseason">${T.note}</div>
+    ${block(T.bristol,'Bristol Temple Meads','Cheltenham Spa')}
+    ${block(T.birmingham,'Birmingham New Street','Cheltenham Spa')}
+  </details>`;
+}
+
 // ---- admin: data-source expiry tracker ----
 function srcStatus(s){
   if(!s.validTo) return {k:'ok', t:s.unconfirmed?'ongoing · confirm':'ongoing'};
@@ -1278,8 +1319,9 @@ function renderAdmin(){
 }
 
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "3.7";
+const VERSION = "3.8";
 const CHANGELOG = [
+  ["3.8","2026-08-18","Pulled real UK train times and added a Train timetables panel: Cheltenham Spa ⇄ Bristol Temple Meads and ⇄ Birmingham New Street, both directions, with operators, journey time, frequency and accurate first/last, plus a representative weekday clock-face timetable and a live link. Also updated the feasibility model’s last-train times to the real values (Bristol→Cheltenham 23:21, Birmingham→Cheltenham 23:37)."],
   ["3.7","2026-08-18","Feasibility Timeline made transparent. Added a ‘journey parts’ colour key; each flight now lists a full step-by-step breakdown with times (no more truncated Gantt labels); and an ‘Assumptions & connection buffers’ panel spells out the numbers used (2h check-in, minutes to clear the plane + reach the platform/coach stand, onward frequencies and last-service times, and the green/amber/red margin rules). Homebound Barcelona now matches the real coach timetable, so a landing that just misses a coach and waits for the next one (e.g. 29 Oct BHX→BCN lands 15:40, misses the 16:15, catches the 19:30) is shown and flagged amber for the long wait."],
   ["3.6","2026-08-18","New Feasibility Timeline popup (a project-management view) for each of the four routings, both directions. It shows a colour-coded ribbon across the day — green where every coach/flight/train connects with margin, an amber ‘shoulder’ where it works but is tight/limited, and red where you’d miss the last onward connection or there’s no service — plus a Gantt row per flight drawing the full coach · check-in · flight · transfer · train chain against a last-connection cut-off line. Open it from the 📊 button on any routing card; switch routing, direction and date inside."],
   ["3.5","2026-08-18","Removed the duplicate data-source list. The separate Admin panel is gone; the single source of truth is now the grouped checklist inside the ? panel, which also gained a status summary line, each source's note, and per-leg validity / next-refresh dates and official links."],
@@ -1346,6 +1388,7 @@ function render(){
   });
   renderItinerary();
   renderBusTimes();
+  renderTrains();
   renderInfoSources();
   document.getElementById('ver').textContent = VERSION;
   const clog = CHANGELOG.map(c=>`<li><b>v${c[0]}</b> <span style="color:#aab">${c[1]}</span> — ${c[2]}</li>`).join('');
