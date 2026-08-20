@@ -388,7 +388,7 @@ const DATA = {
   // known scheduled departure times let us tag daytime vs early/late; prices always via live link
   flights: {
     gro_brs: { carrier:"Ryanair", season:"Apr–Oct (summer only)", days:"Tue, Fri, Sat, Sun", dur:"~2h00", fare:"£30–110", depOut:"~16:00", depHome:"18:55" },
-    gro_bhx: { carrier:"Ryanair", season:"Seasonal — check", days:"Varies", dur:"~2h05", fare:"£30–110", depOut:"", depHome:"" },
+    gro_bhx: { carrier:"Ryanair", season:"Seasonal", days:"Sun, Tue & Fri", dur:"~2h05", fare:"£30–110", depOut:"", depHome:"" },
     bcn_brs: { carrier:"easyJet / Ryanair", season:"Year-round", days:"Most days", dur:"~2h00", fare:"£35–130", depOut:"", depHome:"" },
     bcn_bhx: { carrier:"Jet2 / Ryanair / easyJet / Vueling", season:"Year-round", days:"Daily", dur:"~2h15", fare:"£40–150", depOut:"11:30", depHome:"07:30" }
   },
@@ -409,8 +409,8 @@ const DATA = {
       us: [{carrier:"Ryanair", no:"FR9336", days:[0,2,5,6], dep:"15:15", arr:"18:05", season:"Apr–Oct", approx:true, note:"~13:15 on morning-rotation days"}]
     },
     gro_bhx: {
-      su: [{carrier:"Ryanair", no:"FR4415", days:[1,4,6], dep:"17:50", arr:"18:55", season:"Seasonal — check", approx:true, note:"days/time vary — confirm on the app"}],
-      us: [{carrier:"Ryanair", no:"FR4416", days:[1,4,6], dep:"14:15", arr:"17:10", season:"Seasonal — check", approx:true, note:"days/time vary — confirm on the app"}]
+      su: [{carrier:"Ryanair", no:"FR4415", days:[0,2,5], dep:"17:50", arr:"18:55", season:"Sun, Tue & Fri", approx:true, note:"operates Sun/Tue/Fri — confirm exact time on the app"}],
+      us: [{carrier:"Ryanair", no:"FR4416", days:[0,2,5], dep:"14:15", arr:"17:10", season:"Sun, Tue & Fri", approx:true, note:"operates Sun/Tue/Fri — confirm exact time on the app"}]
     },
     bcn_brs: {
       su: [
@@ -1321,8 +1321,9 @@ function renderAdmin(){
 }
 
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "3.10";
+const VERSION = "3.11";
 const CHANGELOG = [
+  ["3.11","2026-08-18","Corrected the Girona↔Birmingham operating days: it flies Sunday, Tuesday & Friday (was wrongly set to Mon/Thu/Sat), so the app no longer shows a phantom flight on non-operating days such as Thursday 29 Oct."],
   ["3.10","2026-08-18","Fixed the homebound ‘getting to the airport’ assumption text: Birmingham is Cheltenham → Birmingham New Street then New Street → Birmingham International (Air-Rail Link); Bristol is Cheltenham → Bristol Temple Meads then the Airport Flyer (A1) bus. (Previously mislabelled as a generic ‘New Street/Temple Meads change’.)"],
   ["3.9","2026-08-18","Replaced the representative train pattern with the REAL Monday–Friday timetables (licensed RSP / Rail Delivery Group data) for both routes, both directions — Cheltenham⇄Bristol (CrossCountry + GWR) and Cheltenham⇄Birmingham (CrossCountry). This also corrected the last-train times used by the feasibility model: last Bristol→Cheltenham is 22:18 and last Birmingham→Cheltenham is 22:12 (earlier than the ticket-site figures)."],
   ["3.8","2026-08-18","Pulled real UK train times and added a Train timetables panel: Cheltenham Spa ⇄ Bristol Temple Meads and ⇄ Birmingham New Street, both directions, with operators, journey time, frequency and accurate first/last, plus a representative weekday clock-face timetable and a live link. Also updated the feasibility model’s last-train times to the real values (Bristol→Cheltenham 23:21, Birmingham→Cheltenham 23:37)."],
