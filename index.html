@@ -414,12 +414,13 @@ const DATA = {
     },
     bcn_brs: {
       su: [
-        {carrier:"easyJet", no:"", days:[1,2,3,5,6], dep:"10:50", arr:"12:15", season:"Year-round", approx:true, note:"also evening departures"},
-        {carrier:"Ryanair", no:"", days:[0,1,2,3,4,5,6], dep:"", arr:"", season:"Year-round", approx:true, note:"early & mid-morning"}
+        {carrier:"easyJet", no:"", days:[0,1,2,3,4,5,6], dep:"10:50", arr:"12:15", season:"Year-round", approx:true, note:"2/day; also an evening departure — times vary seasonally"},
+        {carrier:"Ryanair", no:"", days:[0,1,2,3,4,5,6], dep:"", arr:"", season:"Year-round", approx:true, note:"1–2/day; times vary"}
       ],
       us: [
-        {carrier:"easyJet", no:"", days:[1,2,3,5,6], dep:"", arr:"", season:"Year-round", approx:true, note:""},
-        {carrier:"Ryanair", no:"", days:[0,1,2,3,4,5,6], dep:"", arr:"", season:"Year-round", approx:true, note:""}
+        {carrier:"easyJet", no:"U22703", days:[0,1,2,3,4,5,6], dep:"07:25", arr:"10:30", season:"Year-round", approx:true, note:"early flight — relaxed window (before 08:00); times vary seasonally"},
+        {carrier:"Ryanair", no:"FR3161", days:[0,1,2,3,4,5,6], dep:"17:30", arr:"20:35", season:"Year-round", approx:true, note:"afternoon; may not run every day off-season — confirm"},
+        {carrier:"easyJet", no:"U22705", days:[0,1,2,3,4,5,6], dep:"17:55", arr:"21:00", season:"Year-round", approx:true, note:"late-afternoon flight; times vary seasonally"}
       ]
     },
     bcn_bhx: {
@@ -1321,8 +1322,9 @@ function renderAdmin(){
 }
 
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "3.11";
+const VERSION = "3.12";
 const CHANGELOG = [
+  ["3.12","2026-08-18","Fixed homebound Bristol→Barcelona: it runs daily (incl. Thursdays) but the easyJet flights had no stored times and the wrong days, so the card wrongly showed ‘no fixed-time flight’. Added the real daily schedule — easyJet 07:25 (early/relaxed) & 17:55, Ryanair 17:30 — so the flights now display with correct daytime/relaxed tags. Outbound Barcelona→Bristol days also corrected to daily."],
   ["3.11","2026-08-18","Corrected the Girona↔Birmingham operating days: it flies Sunday, Tuesday & Friday (was wrongly set to Mon/Thu/Sat), so the app no longer shows a phantom flight on non-operating days such as Thursday 29 Oct."],
   ["3.10","2026-08-18","Fixed the homebound ‘getting to the airport’ assumption text: Birmingham is Cheltenham → Birmingham New Street then New Street → Birmingham International (Air-Rail Link); Bristol is Cheltenham → Bristol Temple Meads then the Airport Flyer (A1) bus. (Previously mislabelled as a generic ‘New Street/Temple Meads change’.)"],
   ["3.9","2026-08-18","Replaced the representative train pattern with the REAL Monday–Friday timetables (licensed RSP / Rail Delivery Group data) for both routes, both directions — Cheltenham⇄Bristol (CrossCountry + GWR) and Cheltenham⇄Birmingham (CrossCountry). This also corrected the last-train times used by the feasibility model: last Bristol→Cheltenham is 22:18 and last Birmingham→Cheltenham is 22:12 (earlier than the ticket-site figures)."],
