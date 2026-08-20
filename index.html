@@ -1012,7 +1012,10 @@ function tlAssumptions(F, side, key){
   if(side==='out'){ const bk=F.busK.replace('bus_',''); const b=DATA.buses[bk]||{};
     rows.push(['Getting to '+F.o,'Coach ~'+fmtDur(F.busMin)+'; first ~'+(b.first||'—')+', last ~'+(b.last||'—')+'. Needing a coach before the first service is flagged amber (taxi).']);
   } else {
-    rows.push(['Getting to '+F.o,'Train from Cheltenham (~'+fmtDur(F.ukPre)+' incl. the New Street/Temple Meads change) to reach check-in in time.']);
+    const via = F.o==='BHX'
+      ? 'Train Cheltenham → Birmingham New Street, then New Street → Birmingham International (Air-Rail Link)'
+      : 'Train Cheltenham → Bristol Temple Meads, then the Airport Flyer (A1) bus to the airport';
+    rows.push(['Getting to '+F.o, via+' (~'+fmtDur(F.ukPre)+') to reach check-in in time.']);
   }
   rows.push(['On landing at '+F.d,'Clear the aircraft, passport &amp; bags: <b>'+h.deplane+' min</b>, then <b>'+h.toStation+' min</b> to the '+(h.mode==='coach'?'coach stand':'station')+'. So you’re ready ~<b>'+(h.deplane+h.toStation)+' min</b> after touchdown.']);
   if(side==='home' && /bcn/.test(key) && DATA.busTimes.bcn){
@@ -1318,8 +1321,9 @@ function renderAdmin(){
 }
 
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "3.9";
+const VERSION = "3.10";
 const CHANGELOG = [
+  ["3.10","2026-08-18","Fixed the homebound ‘getting to the airport’ assumption text: Birmingham is Cheltenham → Birmingham New Street then New Street → Birmingham International (Air-Rail Link); Bristol is Cheltenham → Bristol Temple Meads then the Airport Flyer (A1) bus. (Previously mislabelled as a generic ‘New Street/Temple Meads change’.)"],
   ["3.9","2026-08-18","Replaced the representative train pattern with the REAL Monday–Friday timetables (licensed RSP / Rail Delivery Group data) for both routes, both directions — Cheltenham⇄Bristol (CrossCountry + GWR) and Cheltenham⇄Birmingham (CrossCountry). This also corrected the last-train times used by the feasibility model: last Bristol→Cheltenham is 22:18 and last Birmingham→Cheltenham is 22:12 (earlier than the ticket-site figures)."],
   ["3.8","2026-08-18","Pulled real UK train times and added a Train timetables panel: Cheltenham Spa ⇄ Bristol Temple Meads and ⇄ Birmingham New Street, both directions, with operators, journey time, frequency and accurate first/last, plus a representative weekday clock-face timetable and a live link. Also updated the feasibility model’s last-train times to the real values (Bristol→Cheltenham 23:21, Birmingham→Cheltenham 23:37)."],
   ["3.7","2026-08-18","Feasibility Timeline made transparent. Added a ‘journey parts’ colour key; each flight now lists a full step-by-step breakdown with times (no more truncated Gantt labels); and an ‘Assumptions & connection buffers’ panel spells out the numbers used (2h check-in, minutes to clear the plane + reach the platform/coach stand, onward frequencies and last-service times, and the green/amber/red margin rules). Homebound Barcelona now matches the real coach timetable, so a landing that just misses a coach and waits for the next one (e.g. 29 Oct BHX→BCN lands 15:40, misses the 16:15, catches the 19:30) is shown and flagged amber for the long wait."],
