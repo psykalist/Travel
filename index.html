@@ -403,6 +403,8 @@ const DATA = {
 
   // FLIGHT SCHEDULES — days (0=Sun..6=Sat) + times. su = Spain→UK (outbound), us = UK→Spain (home).
   // approx:true means the time shifts by day/season — treat as a guide, confirm on booking. Days are more reliable.
+  // Optional from/to (YYYY-MM-DD, inclusive) bound a row to a season; the app only shows a flight on dates it
+  // actually operates (see fliesOn). A row with no from/to runs all year. Use summer/winter rows to model schedule changes.
   sched: {
     gro_brs: {
       su: [{carrier:"Ryanair", no:"FR9335", days:[0,2,5,6], dep:"15:35", arr:"16:45", season:"Apr–Oct", approx:true, note:"some days a morning ~09:40 rotation instead"}],
@@ -418,9 +420,14 @@ const DATA = {
         {carrier:"Ryanair", no:"", days:[0,1,2,3,4,5,6], dep:"", arr:"", season:"Year-round", approx:true, note:"1–2/day; times vary"}
       ],
       us: [
-        {carrier:"easyJet", no:"U22703", days:[0,1,2,3,4,5,6], dep:"07:25", arr:"10:30", season:"Year-round", approx:true, note:"early flight — relaxed window (before 08:00); times vary seasonally"},
-        {carrier:"Ryanair", no:"FR3161", days:[0,1,2,3,4,5,6], dep:"17:30", arr:"20:35", season:"Year-round", approx:true, note:"afternoon; may not run every day off-season — confirm"},
-        {carrier:"easyJet", no:"U22705", days:[0,1,2,3,4,5,6], dep:"17:55", arr:"21:00", season:"Year-round", approx:true, note:"late-afternoon flight; times vary seasonally"}
+        // SUMMER schedule (to 24 Oct 2026)
+        {carrier:"easyJet", no:"U27192", days:[0,1,2,3,4,5,6], dep:"10:05", arr:"13:10", season:"Summer", approx:true, to:"2026-10-24", note:"summer schedule"},
+        {carrier:"Ryanair", no:"FR3161", days:[0,1,2,3,4,5,6], dep:"12:40", arr:"15:45", season:"Summer", approx:true, to:"2026-10-24", note:"summer schedule"},
+        {carrier:"easyJet", no:"U22703", days:[0,1,2,3,4,5,6], dep:"18:20", arr:"21:25", season:"Summer", approx:true, to:"2026-10-24", note:"summer schedule"},
+        // WINTER schedule (from 25 Oct 2026)
+        {carrier:"easyJet", no:"U22703", days:[0,1,2,3,4,5,6], dep:"07:25", arr:"10:30", season:"Winter", approx:true, from:"2026-10-25", note:"winter — early/relaxed flight (before 08:00)"},
+        {carrier:"Ryanair", no:"FR3161", days:[0,1,2,3,4,5,6], dep:"17:30", arr:"20:35", season:"Winter", approx:true, from:"2026-10-25", note:"winter schedule"},
+        {carrier:"easyJet", no:"U22705", days:[0,1,2,3,4,5,6], dep:"17:55", arr:"21:00", season:"Winter", approx:true, from:"2026-10-25", note:"winter schedule"}
       ]
     },
     bcn_bhx: {
@@ -582,6 +589,17 @@ function triptype(){ return document.getElementById('triptype').value; }   // 'r
 function datemode(){ return document.getElementById('datemode').value; }   // 'range' | 'single'
 function inWindow(hhmm){ if(!hhmm) return null; const h=parseInt(hhmm.split(':')[0],10); const p=daypref();
   if(p==='any') return true; if(p==='mid') return h>=7 && h<22; return h>=8 && h<20; }
+// date-aware schedule: a flight operates on date D if D's weekday is in its days[]
+// AND D falls within any optional from/to season bounds (YYYY-MM-DD strings, inclusive).
+// Rows with no from/to operate all year — so existing data is unaffected.
+function fliesOn(s, dateStr){
+  if(!s || !dateStr || !s.days) return false;
+  const dow = new Date(dateStr+"T00:00:00").getDay();
+  if(!s.days.includes(dow)) return false;
+  if(s.from && dateStr < s.from) return false;
+  if(s.to && dateStr > s.to) return false;
+  return true;
+}
 
 // which date inputs feed a given direction. One-way uses the single outbound field for whichever tab is active.
 function dateIdsFor(side){
@@ -694,9 +712,9 @@ function renderScan(hostId, routeKey, side){
     const parts=[];
     dates.forEach(dt=>{
       const dow = new Date(dt+"T00:00:00").getDay();
-      const flying = timed.filter(s=>s.days.includes(dow));
+      const flying = timed.filter(s=>fliesOn(s,dt));
       if(!flying.length){
-        const msg = others.length ? 'no fixed-time flight — see carriers below' : `no ${o}→${d} flight this day`;
+        const msg = others.some(s=>fliesOn(s,dt)) ? 'no fixed-time flight — see carriers below' : `no ${o}→${d} flight this day`;
         parts.push(`<div class="drow muted"><span class="d">${niceDate(dt)}</span><span class="noflight">${msg}</span></div>`);
       } else {
         flying.forEach(s=>{
@@ -867,8 +885,9 @@ function renderCompare(hostId, side, order){
   const info = order.map(key=>{
     const [o,d]=IATA[key];
     const svcs=(DATA.sched[SCHEDKEY[key]]||{})[dir]||[];
-    const timed=svcs.filter(s=>s.dep), others=svcs.filter(s=>!s.dep);
-    const flying=timed.filter(s=>s.days.includes(dow));
+    const timed=svcs.filter(s=>s.dep), othersAll=svcs.filter(s=>!s.dep);
+    const flying=timed.filter(s=>fliesOn(s,focus));
+    const others=othersAll.filter(s=>fliesOn(s,focus));
     const flies = flying.length>0 || others.length>0;
     const lh=routeLowHigh(key,mult);
     const tmins=totalJourneyMins(key);
@@ -1034,8 +1053,8 @@ function renderTimeline(){
   const {key,side,date}=tlState; const F=tlFeas(key,side);
   const dow=new Date(date+'T00:00:00').getDay();
   const svcs=(DATA.sched[F.sk]||{})[F.dir]||[];
-  const timed=svcs.filter(s=>s.dep && s.days.includes(dow)).sort((a,b)=>toMin(a.dep)-toMin(b.dep));
-  const others=svcs.filter(s=>!s.dep && s.days.includes(dow));
+  const timed=svcs.filter(s=>s.dep && fliesOn(s,date)).sort((a,b)=>toMin(a.dep)-toMin(b.dep));
+  const others=svcs.filter(s=>!s.dep && fliesOn(s,date));
   const anyApprox=timed.some(s=>s.approx);
 
   // routing + direction switchers
@@ -1322,8 +1341,9 @@ function renderAdmin(){
 }
 
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "3.12";
+const VERSION = "3.13";
 const CHANGELOG = [
+  ["3.13","2026-08-18","Date-aware seasonal schedules: each flight can now carry from/to date bounds, so the planner shows only the flights that actually operate on the date you're viewing — summer and winter timetables no longer clash. First use: Bristol⇄Barcelona now switches between its real summer times (easyJet 10:05/18:20, Ryanair 12:40) and winter times (easyJet 07:25/17:55, Ryanair 17:30) at the 25 Oct 2026 season change. Applies across the compare cards, flight-options scan and the feasibility timeline."],
   ["3.12","2026-08-18","Fixed homebound Bristol→Barcelona: it runs daily (incl. Thursdays) but the easyJet flights had no stored times and the wrong days, so the card wrongly showed ‘no fixed-time flight’. Added the real daily schedule — easyJet 07:25 (early/relaxed) & 17:55, Ryanair 17:30 — so the flights now display with correct daytime/relaxed tags. Outbound Barcelona→Bristol days also corrected to daily."],
   ["3.11","2026-08-18","Corrected the Girona↔Birmingham operating days: it flies Sunday, Tuesday & Friday (was wrongly set to Mon/Thu/Sat), so the app no longer shows a phantom flight on non-operating days such as Thursday 29 Oct."],
   ["3.10","2026-08-18","Fixed the homebound ‘getting to the airport’ assumption text: Birmingham is Cheltenham → Birmingham New Street then New Street → Birmingham International (Air-Rail Link); Bristol is Cheltenham → Bristol Temple Meads then the Airport Flyer (A1) bus. (Previously mislabelled as a generic ‘New Street/Temple Meads change’.)"],
