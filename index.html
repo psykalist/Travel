@@ -143,7 +143,22 @@ h1 { font-size:22px; margin:0 0 2px; letter-spacing:-0.2px; }
 .tlcutlab { position:absolute; top:-16px; transform:translateX(-50%); font-size:9.5px; color:#c0392b; white-space:nowrap; }
 .tlnote { font-size:11.5px; color:#667; margin-top:8px; }
 .tlnoflight { background:#fdecec; border:1px solid #f3bcbc; color:#8f2020; border-radius:10px; padding:10px 12px; font-size:13px; }
-@media(max-width:640px){ .tlpanel{ padding:14px 12px 20px; } .tldate{ margin-left:0; } }
+.tlkey { display:flex; flex-wrap:wrap; gap:6px 14px; font-size:11.5px; color:#556; margin:2px 0 10px; padding:8px 10px; background:#f4f6f9; border-radius:8px; }
+.tlkey span { display:inline-flex; align-items:center; gap:5px; }
+.tlk { width:16px; height:12px; border-radius:3px; display:inline-block; flex:none; }
+.tlk.bus,.tlk.tr{background:#7d8fb8} .tlk.wait{background:#b6bdc9} .tlk.trn{background:#5a86bd}
+.tlk.fly{background:linear-gradient(90deg,#3ca66a,#e0a52e,#d9534f)}
+.tlsteps { margin-top:7px; }
+.tlstep { display:flex; justify-content:space-between; gap:10px; font-size:11.5px; color:#556; border-top:1px dashed #eef1f6; padding:3px 0; }
+.tlstep span { color:#334; }
+.tlstep b { font-weight:600; font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap; }
+.tlass { margin-top:12px; background:#f4f6f9; border-radius:10px; padding:2px 12px; }
+.tlass summary { cursor:pointer; font-weight:700; font-size:12.5px; color:#334; padding:9px 0; }
+.tlass .arow { display:flex; gap:10px; font-size:12px; color:#556; padding:6px 0; border-top:1px solid #e7ebf1; }
+.tlass .arow b { flex:none; width:150px; color:#334; }
+@media(max-width:640px){ .tlpanel{ padding:14px 12px 20px; } .tldate{ margin-left:0; }
+  .tlass .arow{ flex-direction:column; gap:1px; } .tlass .arow b{ width:auto; }
+  .tlstep{ gap:8px; } .tlstep b{ text-align:right; } }
 
 /* itinerary card */
 .planlink { display:inline-block; background:linear-gradient(120deg,#0d7a4f,#0a5f3e); color:#fff !important; border-radius:8px; padding:4px 12px; font-weight:700 !important; font-size:12.5px; text-decoration:none; box-shadow:0 2px 6px rgba(13,122,79,.25); }
@@ -910,34 +925,84 @@ function tlFeas(key, side){
   else { const uk=HOP[o]; ukPre=uk?(uk.train+uk.wait+uk.toStation):120; earliestGo=300+ukPre+120; }
   return {o,d,sk,dir,busK,busMin,flightMin,hop,lastDep,transfer,depMaxGreen,depMaxAmber,earliestGo,ukPre};
 }
-function tlFlight(f, F, side){
+// which onward service the flight makes — uses the real coach timetable where we have one
+function tlOnward(key, side, F, arrM){
+  const h=F.hop; const ready=arrM+h.deplane+h.toStation; const lastDep=toMin(h.lastDep);
+  let list=null;
+  if(side==='home' && /bcn/.test(key) && DATA.busTimes.bcn) list=DATA.busTimes.bcn.toPal; // direct BCN coach — real departures
+  if(list && list.length){
+    const deps=list.map(toMin).filter(x=>x!=null).sort((a,b)=>a-b);
+    const next=deps.find(x=>x>=ready);
+    const prev=[...deps].reverse().find(x=>x<ready);
+    if(next==null || next>lastDep) return {ready,status:'miss',mode:h.mode,lastDep:h.lastDep,discrete:true};
+    const wait=next-ready; const justMiss=(prev!=null && ready-prev<=30)?prev:null;
+    return {ready,next,prev,justMiss,wait,finalM:next+h.train,status:wait>90?'tight':'ok',mode:h.mode,lastDep:h.lastDep,discrete:true};
+  }
+  const margin=lastDep-ready;
+  return {ready,board:ready+h.wait,wait:h.wait,finalM:ready+h.wait+h.train,margin,status:margin<15?'miss':margin<45?'tight':'ok',mode:h.mode,lastDep:h.lastDep,discrete:false};
+}
+function tlFlight(f, F, side, key){
   const depM=toMin(f.dep);
   const arrStr=f.arr || fromMin(depM+F.flightMin).slice(0,5);
   const arrM=toMin(arrStr);
-  const ai=arrivalInfo(F.d, arrStr);
-  let st='go'; const why=[];
-  if(!ai || ai.status==='miss'){ st='no'; why.push(ai?ai.conn:'no onward connection'); }
-  else if(ai.status==='tight'){ st='lim'; why.push(ai.conn); }
+  const h=F.hop; const on=tlOnward(key, side, F, arrM);
+  let st = on.status==='miss'?'no':on.status==='tight'?'lim':'go';
+  const why=[];
+  if(on.status==='miss') why.push('misses the last '+on.mode+' ('+on.lastDep+')');
+  else if(on.discrete && on.wait>90) why.push('~'+fmtDur(on.wait)+' wait for the '+fromMin(on.next).slice(0,5)+' '+on.mode+(on.justMiss!=null?' (just misses the '+fromMin(on.justMiss).slice(0,5)+')':''));
+  else if(on.status==='tight') why.push('tight for the last '+on.mode+' ('+on.lastDep+')');
   if(side==='out'){ const bk=F.busK.replace('bus_',''); const fb=parseHM((DATA.buses[bk]||{}).first); const busDep=depM-120-F.busMin;
-    if(fb!=null && busDep<fb && st!=='no'){ st='lim'; why.push('earliest coach is ~'+fromMin(fb).slice(0,5)+' — you’d need a taxi'); } }
+    if(fb!=null && busDep<fb && st!=='no'){ st='lim'; why.push('earliest coach ~'+fromMin(fb).slice(0,5)+' — taxi needed'); } }
   if(inWindow(f.dep)===false && st==='go'){ st='lim'; why.push('outside your daytime window'); }
-  // gantt segments
-  const h=F.hop; const ready=arrM+h.deplane+h.toStation; const trainStart=ready+h.wait; const finalM=ai?ai.finalMin:trainStart+h.train;
-  let segs;
+  const ready=on.ready, board=on.discrete?on.next:on.board, finalM=on.finalM;
+  const transfer=h.deplane+h.toStation;
+  let segs, steps;
   if(side==='out'){
     segs=[ {a:depM-120-F.busMin,b:depM-120,c:'bus',t:'coach'},
            {a:depM-120,b:depM,c:'wait',t:'check-in'},
            {a:depM,b:arrM,c:'fly',t:'flight'},
-           {a:arrM,b:ready,c:'tr',t:'land→stn'},
-           {a:trainStart,b:finalM,c:'trn',t:'train'} ];
+           {a:arrM,b:ready,c:'tr',t:'transfer'},
+           {a:board,b:finalM,c:'trn',t:'train'} ];
+    steps=[ ['🚌 Coach to '+F.o, fromMin(depM-120-F.busMin)+' dep · '+fmtDur(F.busMin)],
+            ['🛄 Check-in by', fromMin(depM-120)+' (2h before)'],
+            ['✈️ Flight '+F.o+'→'+F.d, f.dep+(f.approx?'*':'')+' → '+arrStr+(f.approx?'*':'')],
+            ['🚶 Clear + reach station', '+'+fmtDur(transfer)+' → ready '+fromMin(ready)],
+            ['🚆 Train to '+h.dest, st==='no'?('misses last train '+h.lastDep):('~'+fromMin(board)+' → arrive ~'+fromMin(finalM)+' (last '+h.lastDep+')')] ];
   } else {
     segs=[ {a:depM-120-F.ukPre,b:depM-120,c:'trn',t:'to airport'},
            {a:depM-120,b:depM,c:'wait',t:'check-in'},
            {a:depM,b:arrM,c:'fly',t:'flight'},
-           {a:arrM,b:ready,c:'tr',t:'arrive'},
-           {a:trainStart,b:finalM,c:'trn',t:'coach home'} ];
+           {a:arrM,b:ready,c:'tr',t:'transfer'},
+           {a:board,b:finalM,c:'trn',t:'coach'} ];
+    const coachTxt = st==='no' ? ('no coach before the last ('+h.lastDep+')')
+       : fromMin(board).slice(0,5)+' → '+h.dest+' ~'+fromMin(finalM)+(on.discrete&&on.wait>90?' · '+fmtDur(on.wait)+' wait':'')+(on.justMiss!=null?' · just misses '+fromMin(on.justMiss).slice(0,5):'');
+    steps=[ ['🚆 Train to '+F.o, 'arrive by '+fromMin(depM-120)],
+            ['🛄 Check-in by', fromMin(depM-120)+' (2h before)'],
+            ['✈️ Flight '+F.o+'→'+F.d, f.dep+(f.approx?'*':'')+' → '+arrStr+(f.approx?'*':'')],
+            ['🚶 Clear plane + reach coach stand', '+'+fmtDur(transfer)+' → ready '+fromMin(ready)],
+            ['🚌 Coach to '+h.dest, coachTxt] ];
   }
-  return {depM,arrStr,arrM,ai,st,why,finalM,segs};
+  return {depM,arrStr,arrM,st,why,finalM,segs,steps,on};
+}
+// human-readable list of the buffer assumptions for the current routing
+function tlAssumptions(F, side, key){
+  const h=F.hop; const rows=[];
+  rows.push(['Airport check-in','Be at the airport <b>2h00</b> before departure — Ryanair/Jet2 close check-in strictly.']);
+  if(side==='out'){ const bk=F.busK.replace('bus_',''); const b=DATA.buses[bk]||{};
+    rows.push(['Getting to '+F.o,'Coach ~'+fmtDur(F.busMin)+'; first ~'+(b.first||'—')+', last ~'+(b.last||'—')+'. Needing a coach before the first service is flagged amber (taxi).']);
+  } else {
+    rows.push(['Getting to '+F.o,'Train from Cheltenham (~'+fmtDur(F.ukPre)+' incl. the New Street/Temple Meads change) to reach check-in in time.']);
+  }
+  rows.push(['On landing at '+F.d,'Clear the aircraft, passport &amp; bags: <b>'+h.deplane+' min</b>, then <b>'+h.toStation+' min</b> to the '+(h.mode==='coach'?'coach stand':'station')+'. So you’re ready ~<b>'+(h.deplane+h.toStation)+' min</b> after touchdown.']);
+  if(side==='home' && /bcn/.test(key) && DATA.busTimes.bcn){
+    rows.push(['Onward coach','Fixed departures towards '+h.dest+': '+DATA.busTimes.bcn.toPal.join(', ')+'. Ride ~'+fmtDur(h.train)+'; last '+h.lastDep+'. You take the <b>first coach after you’re ready</b>; a wait over ~1h30 is flagged amber.']);
+  } else if(side==='home'){
+    rows.push(['Onward coach','Two legs (line 607 airport→Girona station, then 5/41/42 to '+h.dest+') — treated as an estimate (~'+fmtDur(h.train)+'); last ~'+h.lastDep+'.']);
+  } else {
+    rows.push(['Onward train','Trains ~every 30–60 min to '+h.dest+' (~'+fmtDur(h.train)+'); last '+h.lastDep+'. Margin to the last train: <b>≥45 min</b> = green, 15–45 = amber, under 15 = missed.']);
+  }
+  rows.push(['Feasibility colours','<b>Green</b> connects with margin · <b>amber</b> works but tight or a long wait · <b>red</b> misses the last onward service or no flight that day.']);
+  return rows.map(r=>`<div class="arow"><b>${r[0]}</b><span>${r[1]}</span></div>`).join('');
 }
 
 function renderTimeline(){
@@ -964,17 +1029,18 @@ function renderTimeline(){
     rows=`<div class="tlnoflight">No fixed-time ${F.o}→${F.d} flight on ${DOW[dow]} — this routing is a <b>no-go</b> that day.${others.length?` Carriers with day-varying times (${others.map(s=>s.carrier).join(', ')}) may still fly — check the flight options list.`:''}</div>`;
   } else {
     rows=timed.map(s=>{
-      const r=tlFlight(s,F,side);
-      const bars=r.segs.map(g=>{ const L=tlx(g.a), W=tlx(g.b)-tlx(g.a); if(W<=0) return ''; const cls=g.c==='fly'?`fly ${r.st}`:g.c; return `<div class="tlleg ${cls}" style="left:${L}%;width:${W}%" title="${g.t}">${W>7?g.t:''}</div>`; }).join('');
+      const r=tlFlight(s,F,side,key);
+      const bars=r.segs.filter(g=>isFinite(g.a)&&isFinite(g.b)&&g.b>g.a).map(g=>{ const L=tlx(g.a), W=tlx(g.b)-tlx(g.a); if(W<=0) return ''; const cls=g.c==='fly'?`fly ${r.st}`:g.c; return `<div class="tlleg ${cls}" style="left:${L}%;width:${W}%" title="${g.t}">${W>9?g.t:''}</div>`; }).join('');
       const cut=`<div class="tlcut" style="left:${tlx(F.lastDep)}%"></div><div class="tlcutlab" style="left:${tlx(F.lastDep)}%">last ${F.hop.mode} ${F.hop.lastDep}</div>`;
       const stTxt=r.st==='go'?'connects':r.st==='lim'?'limited':'no-go';
-      const arrTxt=r.ai?`→ ${r.ai.dest} ~${r.ai.finalStr}`:'';
+      const arrTxt=(r.finalM!=null&&isFinite(r.finalM))?`→ ${F.hop.dest} ~${fromMin(r.finalM)}`:'';
+      const steps=`<div class="tlsteps">${r.steps.map(x=>`<div class="tlstep"><span>${x[0]}</span><b>${x[1]}</b></div>`).join('')}</div>`;
       return `<div class="tlrow ${r.st}">
         <div class="tlrow-h">${carrierBadge(s.carrier)}<b>${s.dep}${s.approx?'*':''} → ${r.arrStr}${s.approx?'*':''}</b>
           <span class="tlpill ${r.st}">${stTxt}</span>
           <span class="cmptime" style="color:#556">${arrTxt}</span>
           ${r.why.length?`<span class="tlwhy">${r.why.join(' · ')}</span>`:''}</div>
-        <div class="tltrack">${bars}${cut}</div></div>`;
+        <div class="tltrack">${bars}${cut}</div>${steps}</div>`;
     }).join('');
   }
 
@@ -989,6 +1055,13 @@ function renderTimeline(){
       <span><i class="tldot go"></i> Green — every coach, flight &amp; train connects with margin</span>
       <span><i class="tldot lim"></i> Amber shoulder — works but tight/limited (a slipped connection bites)</span>
       <span><i class="tldot no"></i> Red — misses the last onward connection / no service</span></div>
+    <div class="tlkey">
+      <b style="color:#667;font-weight:700">Journey parts:</b>
+      <span><i class="tlk bus"></i> Coach to airport</span>
+      <span><i class="tlk wait"></i> Check-in / wait</span>
+      <span><i class="tlk fly"></i> Flight <span style="color:#8a93a0">(coloured by feasibility)</span></span>
+      <span><i class="tlk tr"></i> Airport transfer</span>
+      <span><i class="tlk trn"></i> Train / coach</span></div>
     <div class="tlribwrap">
       <div class="tlriblab">Departure feasibility across the day (by flight departure time)</div>
       <div class="tlribbon">${ribbon}</div>
@@ -996,7 +1069,8 @@ function renderTimeline(){
     </div>
     <div class="tlriblab">Each flight, as a full chain — coach · check-in · flight · transfer · train:</div>
     ${rows}
-    <div class="tlnote">Times use published schedules and the app’s transfer buffers (2h airport check-in, deplane/rail transfers, last-connection cut-offs). ${anyApprox?'* flight time varies by day — confirm on booking. ':''}Green/amber/red reflect whether the <b>onward connection</b> is made; always verify live times and fares before booking.</div>`;
+    <details class="tlass"><summary>Assumptions &amp; connection buffers (for this routing)</summary>${tlAssumptions(F,side,key)}</details>
+    <div class="tlnote">${anyApprox?'* flight time varies by day — confirm on booking. ':''}Green/amber/red reflect whether the <b>onward connection</b> is made; always verify live times and fares before booking.</div>`;
 }
 
 // ============================================================================
@@ -1204,8 +1278,9 @@ function renderAdmin(){
 }
 
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "3.6";
+const VERSION = "3.7";
 const CHANGELOG = [
+  ["3.7","2026-08-18","Feasibility Timeline made transparent. Added a ‘journey parts’ colour key; each flight now lists a full step-by-step breakdown with times (no more truncated Gantt labels); and an ‘Assumptions & connection buffers’ panel spells out the numbers used (2h check-in, minutes to clear the plane + reach the platform/coach stand, onward frequencies and last-service times, and the green/amber/red margin rules). Homebound Barcelona now matches the real coach timetable, so a landing that just misses a coach and waits for the next one (e.g. 29 Oct BHX→BCN lands 15:40, misses the 16:15, catches the 19:30) is shown and flagged amber for the long wait."],
   ["3.6","2026-08-18","New Feasibility Timeline popup (a project-management view) for each of the four routings, both directions. It shows a colour-coded ribbon across the day — green where every coach/flight/train connects with margin, an amber ‘shoulder’ where it works but is tight/limited, and red where you’d miss the last onward connection or there’s no service — plus a Gantt row per flight drawing the full coach · check-in · flight · transfer · train chain against a last-connection cut-off line. Open it from the 📊 button on any routing card; switch routing, direction and date inside."],
   ["3.5","2026-08-18","Removed the duplicate data-source list. The separate Admin panel is gone; the single source of truth is now the grouped checklist inside the ? panel, which also gained a status summary line, each source's note, and per-leg validity / next-refresh dates and official links."],
   ["3.4","2026-08-18","Mobile fix for the Admin data-source tracker: on phones the six-column table no longer overflows its card (which pushed the status pills past the border). Each source now stacks into its own labelled card — Timetable, Status, Validity, Next refresh, Notes, Source — so everything stays inside the panel and is readable without zooming."],
