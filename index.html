@@ -142,6 +142,7 @@ h1 { font-size:22px; margin:0 0 2px; letter-spacing:-0.2px; }
 .tlcut { position:absolute; top:-3px; bottom:-3px; width:0; border-left:2px dashed #d9534f; }
 .tlcutlab { position:absolute; top:-16px; transform:translateX(-50%); font-size:9.5px; color:#c0392b; white-space:nowrap; }
 .tlnote { font-size:11.5px; color:#667; margin-top:8px; }
+.tlrisk { font-size:12px; color:#334; background:#eef4ff; border:1px solid #cfe0f7; border-radius:8px; padding:8px 11px; margin:2px 0 10px; }
 .tlnoflight { background:#fdecec; border:1px solid #f3bcbc; color:#8f2020; border-radius:10px; padding:10px 12px; font-size:13px; }
 .tlkey { display:flex; flex-wrap:wrap; gap:6px 14px; font-size:11.5px; color:#556; margin:2px 0 10px; padding:8px 10px; background:#f4f6f9; border-radius:8px; }
 .tlkey span { display:inline-flex; align-items:center; gap:5px; }
@@ -209,6 +210,8 @@ h1 { font-size:22px; margin:0 0 2px; letter-spacing:-0.2px; }
 .cbadge { display:inline-flex; align-items:center; justify-content:center; height:20px; border:1px solid #000; border-radius:5px; padding:0 9px; font-size:12px; font-weight:800; letter-spacing:.2px; margin:0 10px; vertical-align:middle; box-shadow:0 1px 2px rgba(0,0,0,.12); }
 .also { margin-top:10px; font-size:12.5px; color:#455; background:#eef4ff; border:1px solid #d3e0f7; border-radius:8px; padding:8px 11px; }
 .also a { color:#1a53d0; text-decoration:none; font-weight:600; }
+.cheapfind { margin:8px 0 4px; font-size:12.5px; background:#fff8e8; border:1px solid #f2e0b0; border-radius:8px; padding:8px 11px; color:#5a4a12; }
+.cheapfind a { color:#1a53d0; text-decoration:none; font-weight:600; white-space:nowrap; }
 .drow a { text-decoration:none; color:#1a53d0; font-weight:600; font-size:12.5px; }
 @media(max-width:640px){ .scangrid{ grid-template-columns:1fr; } }
 
@@ -553,6 +556,16 @@ const ROUTELABEL = { gro_brs:'Girona → Bristol', gro_bhx:'Girona → Birmingha
 // ---- links ----
 function ryanair(o,d,date){ return `https://www.ryanair.com/gb/en/trip/flights/select?adults=1&teenagers=0&children=0&infants=0&dateOut=${date}&originIata=${o}&destinationIata=${d}&isConnectedFlight=false&isReturn=false`; }
 function sky(o,d,date){ const p=date.split('-'); return `https://www.skyscanner.net/transport/flights/${o.toLowerCase()}/${d.toLowerCase()}/${p[0].slice(2)}${p[1]}${p[2]}/`; }
+// cheapest-date finders — open the live whole-month price grid (real fares, no scraping)
+function skyMonth(o,d){ return `https://www.skyscanner.net/transport/flights/${o.toLowerCase()}/${d.toLowerCase()}/?preferdirects=true`; }
+function gflights(o,d){ return `https://www.google.com/travel/flights?q=cheapest%20direct%20flights%20from%20${o}%20to%20${d}`; }
+function ryanairFinder(o,d){ return `https://www.ryanair.com/gb/en/cheap-flights?originIata=${o}&destinationIata=${d}`; }
+function cheapFinder(o,d){
+  return `<div class="cheapfind">💷 <b>See when it's cheapest</b> (live whole-month fares): `+
+    `<a href="${skyMonth(o,d)}" target="_blank" rel="noopener">Skyscanner month ↗</a> · `+
+    `<a href="${gflights(o,d)}" target="_blank" rel="noopener">Google date grid ↗</a> · `+
+    `<a href="${ryanairFinder(o,d)}" target="_blank" rel="noopener">Ryanair Fare Finder ↗</a></div>`;
+}
 const LINKS = {
   bus_pgl_gro:"https://www.moventis.es/en/lines-timetables",
   bus_pgl_bcn:"https://www.moventis.es/en/barcelona-airport",
@@ -747,6 +760,7 @@ function renderScan(hostId, routeKey, side){
   host.innerHTML = `<div class="scan">
     <h3>Flight options — ${o} → ${d}</h3>
     <p class="hint"><b>Direct flights only, ≤3h.</b> Fixed-time services show per day${season?' · '+season:''}. <b>*</b> = approximate time. <b>fares · your date</b> opens the live site pre-filled with your date &amp; route; the second link books direct with that airline. Other carriers on the route are listed below.</p>
+    ${cheapFinder(o,d)}
     ${rows}${alsoHtml}</div>`;
 }
 
@@ -1106,6 +1120,9 @@ function renderTimeline(){
       <span><i class="tlk fly"></i> Flight <span style="color:#8a93a0">(coloured by feasibility)</span></span>
       <span><i class="tlk tr"></i> Airport transfer</span>
       <span><i class="tlk trn"></i> Train / coach</span></div>
+    <div class="tlrisk">${side==='home'
+      ? '⚠ <b>The tight link is the flight → Spanish coach.</b> Coaches from Girona/Barcelona are infrequent and the last one is the binding constraint — the UK trains &amp; airport transfers are frequent and low-risk.'
+      : '✓ <b>Low risk once you land.</b> UK trains &amp; airport links (Bristol Flyer bus / Birmingham rail) are frequent — only a very late flight bumps against the last train.'}</div>
     <div class="tlribwrap">
       <div class="tlriblab">Departure feasibility across the day (by flight departure time)</div>
       <div class="tlribbon">${ribbon}</div>
@@ -1341,8 +1358,9 @@ function renderAdmin(){
 }
 
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "3.13";
+const VERSION = "3.14";
 const CHANGELOG = [
+  ["3.14","2026-08-18","Added a ‘see when it’s cheapest’ finder to each route’s flight options — one-tap links to Skyscanner’s whole-month price grid, Google’s date grid and Ryanair’s Fare Finder, pre-filled with the route, so you can spot the lowest-fare dates live (airlines block price scraping, so these open the real search). Also added a risk banner to the feasibility timeline: homebound highlights that the flight→Spanish coach is the tight link, outbound notes the UK side is frequent/low-risk."],
   ["3.13","2026-08-18","Date-aware seasonal schedules: each flight can now carry from/to date bounds, so the planner shows only the flights that actually operate on the date you're viewing — summer and winter timetables no longer clash. First use: Bristol⇄Barcelona now switches between its real summer times (easyJet 10:05/18:20, Ryanair 12:40) and winter times (easyJet 07:25/17:55, Ryanair 17:30) at the 25 Oct 2026 season change. Applies across the compare cards, flight-options scan and the feasibility timeline."],
   ["3.12","2026-08-18","Fixed homebound Bristol→Barcelona: it runs daily (incl. Thursdays) but the easyJet flights had no stored times and the wrong days, so the card wrongly showed ‘no fixed-time flight’. Added the real daily schedule — easyJet 07:25 (early/relaxed) & 17:55, Ryanair 17:30 — so the flights now display with correct daytime/relaxed tags. Outbound Barcelona→Bristol days also corrected to daily."],
   ["3.11","2026-08-18","Corrected the Girona↔Birmingham operating days: it flies Sunday, Tuesday & Friday (was wrongly set to Mon/Thu/Sat), so the app no longer shows a phantom flight on non-operating days such as Thursday 29 Oct."],
