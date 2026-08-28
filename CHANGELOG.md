@@ -3,6 +3,24 @@
 All notable changes to the Palafrugell ↔ Cheltenham Spa journey planner.
 Versions are also shown in-app (header badge + footer "Version history").
 
+## [3.16] — 2026-08-28
+- Made the app self-aware about its own data. A built-in self-check runs on
+  every load: it flags internal contradictions (operating-days list that
+  disagrees with its own description, missing/blank days, a schedule used past
+  its season end) and shows a per-route "flights shown on these days" table so a
+  wrong day is caught at a glance. Removed the false claim that a background task
+  refreshed data every Monday (it never existed); panels now state the truth and
+  show last-checked / next-check dates. Added a REFRESH_PLAYBOOK.md the monthly
+  task follows, and daysText guards so a half-finished edit trips the self-check.
+
+## [3.15] — 2026-08-28
+- Corrected the Girona ↔ Bristol operating days. Ryanair (FR9335 outbound /
+  FR9336 homebound) actually flies Mon, Wed, Sat & Sun; the app had it as
+  Tue, Fri, Sat & Sun, so it showed a phantom flight on Tue/Fri and wrongly
+  showed NO flight on Mondays/Wednesdays (e.g. Mon 7 Sep 2026). Stored the
+  real day-by-day times too — outbound Mon ~18:35 / Wed ~09:30 / Sat ~22:20 /
+  Sun ~09:20; homebound Mon ~15:10 / Wed ~05:55 / Sat ~18:55 / Sun ~05:55.
+
 ## [2.9] — 2026-08-14
 - Girona airport ground leg is now modelled as two legs, since direct airport
   coaches are limited: Palafrugell ⇄ Girona bus station (Moventis 5/41/42) +
