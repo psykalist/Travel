@@ -3,6 +3,14 @@
 All notable changes to the Palafrugell ↔ Cheltenham Spa journey planner.
 Versions are also shown in-app (header badge + footer "Version history").
 
+## [3.17] — 2026-08-28
+- Self-maintaining refresh is now live. A monthly cloud task re-verifies every
+  timetable against the official sites, runs the built-in self-check, and pushes
+  updates to GitHub automatically (the phone/PWA updates on next open). It only
+  messages Kieran when something changed or could not be confirmed. Procedure is
+  in REFRESH_PLAYBOOK.md. Standing rule: every change henceforth — automated or
+  manual — is documented in this changelog.
+
 ## [3.16] — 2026-08-28
 - Made the app self-aware about its own data. A built-in self-check runs on
   every load: it flags internal contradictions (operating-days list that

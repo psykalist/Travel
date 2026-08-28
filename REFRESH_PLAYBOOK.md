@@ -6,6 +6,11 @@ timetables are re-verified on a schedule by an automated task that follows this
 document, edits the data in `index.html`, and pushes to GitHub. GitHub Pages then
 serves the update to the phone/PWA on next open.
 
+> **STANDING RULE — document everything.** Every change to this app, whether made
+> by the monthly task or by hand in a session, MUST add a newest-first entry to the
+> CHANGELOG array in index.html AND mirror it into CHANGELOG.md, and bump VERSION.
+> A data change is never pushed without a changelog line describing it.
+
 **Cadence:** monthly. **Owner-facing dates:** the app shows `LAST_VERIFIED` and
 `NEXT_VERIFIED` (near the top of the `<script>`); update both every run.
 
