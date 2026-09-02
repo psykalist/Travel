@@ -380,7 +380,7 @@ tr.ad-expired td { background:#fef7f7; }
 // against the official sites, rewrites the affected values, and bumps lastUpdated + LAST_VERIFIED.
 // ============================================================================
 const DATA = {
-  lastUpdated: "2026-08-28",
+  lastUpdated: "2026-09-02",
   eurToGbp: 0.85,                       // approx; refreshed weekly
 
   buses: {
@@ -392,7 +392,7 @@ const DATA = {
   // known scheduled departure times let us tag daytime vs early/late; prices always via live link
   flights: {
     gro_brs: { carrier:"Ryanair", season:"Apr–Oct (summer only)", days:"Mon, Wed, Sat, Sun", dur:"~2h00", fare:"£30–110", depOut:"varies (eve Mon/Sat, morn Wed/Sun)", depHome:"varies" },
-    gro_bhx: { carrier:"Ryanair", season:"Seasonal", days:"Sun, Tue & Fri", dur:"~2h05", fare:"£30–110", depOut:"", depHome:"" },
+    gro_bhx: { carrier:"Ryanair", season:"Seasonal", days:"Sun, Tue, Thu & Fri", dur:"~2h05", fare:"£30–110", depOut:"", depHome:"" },
     bcn_brs: { carrier:"easyJet / Ryanair", season:"Year-round", days:"Most days", dur:"~2h00", fare:"£35–130", depOut:"", depHome:"" },
     bcn_bhx: { carrier:"Jet2 / Ryanair / easyJet / Vueling", season:"Year-round", days:"Daily", dur:"~2h15", fare:"£40–150", depOut:"11:30", depHome:"07:30" }
   },
@@ -415,8 +415,8 @@ const DATA = {
       us: [{carrier:"Ryanair", no:"FR9336", days:[0,1,3,6], daysText:"Mon, Wed, Sat, Sun", dep:"15:10", arr:"18:00", season:"Apr–Oct", approx:true, note:"operates Mon/Wed/Sat/Sun — Mon ~15:10, Wed ~05:55, Sat ~18:55, Sun ~05:55; confirm on Ryanair"}]
     },
     gro_bhx: {
-      su: [{carrier:"Ryanair", no:"FR4415", days:[0,2,5], daysText:"Sun, Tue, Fri", dep:"17:50", arr:"18:55", season:"Sun, Tue & Fri", approx:true, note:"operates Sun/Tue/Fri — confirm exact time on the app"}],
-      us: [{carrier:"Ryanair", no:"FR4416", days:[0,2,5], daysText:"Sun, Tue, Fri", dep:"14:15", arr:"17:10", season:"Sun, Tue & Fri", approx:true, note:"operates Sun/Tue/Fri — confirm exact time on the app"}]
+      su: [{carrier:"Ryanair", no:"FR4415", days:[0,2,4,5], daysText:"Sun, Tue, Thu, Fri", dep:"17:50", arr:"18:55", season:"Sun, Tue, Thu & Fri", approx:true, note:"operates Sun/Tue/Thu/Fri; confirm exact time on Ryanair"}],
+      us: [{carrier:"Ryanair", no:"FR4414", days:[0,2,4,5], daysText:"Sun, Tue, Thu, Fri", dep:"14:15", arr:"17:10", season:"Sun, Tue, Thu & Fri", approx:true, note:"operates Sun/Tue/Thu/Fri; confirm exact time on Ryanair"}]
     },
     bcn_brs: {
       su: [
@@ -455,10 +455,10 @@ const DATA = {
     season: "Times below are the WINTER baseline (Sep–Jun, Mon–Fri). We're currently in the SUMMER season (Jul–Aug 2026) — the current summer sheet is linked per line; exact summer departures differ.",
     gro: {
       label: "Leg 1 · Palafrugell ⇄ Girona city bus station · Moventis (Sarfa) lines 5/41/42 via Palamós/Platja d'Aro (~1h00–1h40). There is NO direct airport coach — change at Girona for the 607 (see below).",
-      toDest: ["06:15","06:30","07:15","07:30","08:20","12:20","13:00","13:30","14:00","14:45","16:20","17:40","18:00","18:15","18:40","19:20","20:20"],
+      toDest: ["06:15","07:15","07:30","08:15","10:15","11:15","13:15","14:15","15:15","16:15","17:15","18:15","20:15"],
       toPal:  ["08:00","08:15","09:00","09:15","10:00","11:00","14:00","14:45","15:15","15:45","16:15","18:00","19:15","19:45","20:00","20:15","21:00","22:00"],
       note: "Winter baseline shown — open the summer sheet for exact Jul–Aug times.",
-      src: "https://www.moventis.es/sites/moventis/files/line/files/5-41-42_girona-costa_brava_juliol-agost_2026.pdf"
+      src: "https://www.moventis.es/sites/moventis/files/line/files/e3_girona-costa_brava_092026-062027.pdf"
     },
     gro_air: {
       label: "Leg 2 · Girona city bus/train station ⇄ Girona Airport · Sagalés line 607 (~25–30 min, €2.80). Roughly hourly, ~05:00 to ~00:00 daily, and timed to Ryanair arrivals/departures. Girona's bus & train stations share one building, so it also connects to trains.",
@@ -501,8 +501,8 @@ const DATA = {
   sources: [
     {id:"flyer",   label:"Bristol Airport Flyer (A1)", validFrom:null, validTo:null,
       src:"https://flyer.bristolairport.co.uk/timetables", note:"24/7 turn-up-and-go frequency — no seasonal expiry"},
-    {id:"bus_gro", label:"Moventis 5/41/42 · Palafrugell ⇄ Girona", validFrom:"2026-07-01", validTo:"2026-08-31",
-      src:"https://www.moventis.es/sites/moventis/files/line/files/5-41-42_girona-costa_brava_juliol-agost_2026.pdf",
+    {id:"bus_gro", label:"Moventis 5/41/42 · Palafrugell ⇄ Girona", validFrom:"2026-09-01", validTo:"2027-06-30",
+      src:"https://www.moventis.es/sites/moventis/files/line/files/e3_girona-costa_brava_092026-062027.pdf",
       note:"Current summer sheet (Jul–Aug 2026); winter sheet is Sep–Jun. Times below are the winter baseline — see PDF for exact summer departures", unconfirmed:true},
     {id:"bus_gro_air", label:"Sagalés 607 · Girona station ⇄ Girona Airport", validFrom:"2026-08-14", validTo:null,
       src:"https://www.sagales.com/en/linia/607",
@@ -1338,8 +1338,8 @@ function renderInfoSources(){
 // (b) show each route's operating days, so a wrong one is spotted at a glance
 // instead of by trial-and-error. These are updated by the refresh task.
 const REFRESH_CADENCE = 'monthly';
-const LAST_VERIFIED   = '2026-08-28';   // last time a human/task re-verified sources; refresh task updates this
-const NEXT_VERIFIED   = '2026-09-28';   // next scheduled automated check
+const LAST_VERIFIED   = '2026-09-02';   // last time a human/task re-verified sources; refresh task updates this
+const NEXT_VERIFIED   = '2026-10-02';   // next scheduled automated check
 const DOWFULL = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 // which registry source backs each flight route (for expiry-aware warnings)
 const ROUTE_SRC = { gro_brs:'fl_gro', gro_bhx:'fl_gro', bcn_brs:'fl_bcn', bcn_bhx:'fl_bcn',
@@ -1429,8 +1429,9 @@ function renderAdmin(){
 }
 
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "3.17";
+const VERSION = "3.18";
 const CHANGELOG = [
+  ["3.18","2026-09-02","Refresh: Girona-Birmingham now shows Sun/Tue/Thu/Fri each way (FR4415 out, FR4414 home) - it was hiding every Thursday flight; and Palafrugell to Girona switched to the winter Moventis E3 sheet (Sep 2026-Jun 2027) with the Mon-Fri departure times. Return and weekend times still to be confirmed."],
   ["3.17","2026-08-28","Self-maintaining refresh is now live. A monthly cloud task re-verifies every timetable against the official sites, runs the built-in self-check, and pushes any update to GitHub on its own — your phone updates on next open, and it only messages Kieran when something changed or couldn’t be confirmed (procedure in REFRESH_PLAYBOOK.md). Standing rule from here on: EVERY change to this app, automated or manual, is recorded in this changelog."],
   ["3.16","2026-08-28","Made the app self-aware about its own data. A built-in self-check now runs on every load: it flags internal contradictions (operating-days list that disagrees with its own description, missing/blank days, a schedule used past its season end) and surfaces a per-route ‘flights shown on these days’ table so a wrong day is caught at a glance instead of by trial. Also removed the false claim that a background task refreshed data every Monday (no such task existed) — the panels now state the truth: the page can't read airlines live, a monthly task re-verifies sources and pushes updates, with last-checked / next-check dates shown. Added daysText guards to the Girona schedules so a half-finished edit trips the self-check."],
   ["3.15","2026-08-28","Corrected the Girona↔Bristol operating days: Ryanair (FR9335 out / FR9336 home) actually flies Mon, Wed, Sat & Sun — the app had it as Tue, Fri, Sat & Sun, so it showed a phantom flight on Tue/Fri and wrongly showed NO flight on Mondays and Wednesdays (e.g. Mon 7 Sep 2026). Also stored the real day-by-day times: outbound Mon ~18:35 / Wed ~09:30 / Sat ~22:20 / Sun ~09:20, homebound Mon ~15:10 / Wed ~05:55 / Sat ~18:55 / Sun ~05:55."],
