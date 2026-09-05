@@ -253,7 +253,15 @@ footer { margin-top:26px; font-size:11.5px; color:#8a93a0; border-top:1px solid 
 .btmore > summary::before { content:"▸ "; }
 .btmore[open] > summary::before { content:"▾ "; }
 .btmore[open] > summary { margin-bottom:6px; }
-.bt { background:#eef4ff; border:1px solid #d3e0f7; border-radius:6px; padding:2px 7px; font-size:12px; font-variant-numeric:tabular-nums; }
+.bt { background:#e6efff; border:1px solid #b9d0f4; border-radius:7px; padding:3px 9px; font-size:12.5px; font-variant-numeric:tabular-nums; color:#1c3f70; font-weight:600; }
+.bt .bta { color:#c05a1f; font-weight:800; margin:0 1px; }
+.bt.sweet { background:#12a05a; border-color:#0e8b4d; color:#fff; font-weight:800; box-shadow:0 1px 4px rgba(18,160,90,.35); }
+.bt.sweet .bta { color:#c8ffdd; }
+.btcap { font-size:11.5px; color:#4a5568; margin:6px 0 10px; line-height:1.5; }
+.sweetkey { background:#12a05a; color:#fff; border-radius:4px; padding:1px 6px; font-weight:800; font-size:11px; }
+.btsweet { display:flex; flex-wrap:wrap; align-items:center; gap:6px; background:#f0faf3; border:1px solid #c9e9d5; border-radius:9px; padding:7px 10px; margin:5px 0 7px; }
+.btsweetlab { font-size:10.5px; font-weight:800; color:#0b7a44; text-transform:uppercase; letter-spacing:.04em; margin-right:2px; }
+.btsweet.none { color:#8a93a0; font-style:italic; background:none; border:none; padding:2px 0; font-size:11.5px; }
 .btnote { font-size:11.5px; color:#b26a00; margin:5px 0; }
 .btsrc { font-size:12px; color:#1a53d0; text-decoration:none; font-weight:600; }
 /* Bristol Airport Flyer (A1) panel */
@@ -509,6 +517,7 @@ const DATA = {
     season: "Times below are the WINTER baseline (Sep–Jun, Mon–Fri). We're currently in the SUMMER season (Jul–Aug 2026) — the current summer sheet is linked per line; exact summer departures differ.",
     gro: {
       label: "Leg 1 · Palafrugell ⇄ Girona city bus station · Moventis (Sarfa) lines 5/41/42 via Palamós/Platja d'Aro (~1h00–1h40). There is NO direct airport coach — change at Girona for the 607 (see below).",
+      mins: 75,   // Moventis 5/41/42 typical run ~1h00–1h40; used to estimate arrivals (~)
       toDest: ["06:15","07:15","07:30","08:15","10:15","11:15","13:15","14:15","15:15","16:15","17:15","18:15","20:15"],
       toPal:  ["08:00","08:15","09:00","09:15","10:00","11:00","14:00","14:45","15:15","15:45","16:15","18:00","19:15","19:45","20:00","20:15","21:00","22:00"],
       note: "Winter baseline shown — open the summer sheet for exact Jul–Aug times.",
@@ -516,6 +525,7 @@ const DATA = {
     },
     gro_air: {
       label: "Leg 2 · Girona city bus/train station ⇄ Girona Airport · Sagalés line 607 (~25–30 min, €2.80). Roughly hourly, ~05:00 to ~00:00 daily, and timed to Ryanair arrivals/departures. Girona's bus & train stations share one building, so it also connects to trains.",
+      mins: 28,   // Sagalés 607 ~25–30 min
       toDest: ["05:00","06:00","07:00","08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00","21:00","22:00","23:00"],
       toPal:  ["05:30","06:30","07:30","08:30","09:30","10:30","11:30","12:30","13:30","14:30","15:30","16:30","17:30","18:30","19:30","20:30","21:30","22:30","23:30","00:30"],
       note: "Hourly baseline (≈ top of each hour) — exact 607 departures track the day's Ryanair schedule, so confirm on the live link. → row = towards the Airport; return row = towards Girona station.",
@@ -523,6 +533,7 @@ const DATA = {
     },
     bcn: {
       label: "Palafrugell ⇄ Barcelona Airport (T2/T1) · line 1 direct coach (~2h45). Airport-bound services shown.",
+      mins: 140,   // Moventis line 1 direct coach ~2h15–2h20
       toDest: ["06:15","09:35","10:35","13:30","15:30"],
       toPal:  ["08:30","10:30","16:15","19:30","20:15"],
       note: "Winter baseline sample — summer adds an early ~04:15 and later services to ~23:00/23:25. Open the line page for the exact current sheet.",
@@ -536,6 +547,7 @@ const DATA = {
     note: "Real Monday–Friday timetable (licensed RSP / Rail Delivery Group data) for Summer 2026 — valid until Sat 12 Dec 2026. Saturday & Sunday run a slightly reduced service; tap ‘live times’ for weekend/real-time.",
     bristol: {
       label: "Cheltenham Spa ⇄ Bristol Temple Meads · CrossCountry (XC ~40 min) & Great Western (GW ~1h05) · Mon–Fri. For Bristol Airport, change at Temple Meads for the Flyer A1.",
+      mins: 50,   // Cheltenham⇄Bristol: XC ~40 min / GW ~1h05 — 50 is a representative mid (arrivals ~)
       toDest: ["06:14","07:29","07:36","08:01","08:29","08:52","09:26","09:32","09:52","10:23","10:29","10:52","11:23","11:29","11:52","12:29","12:35","12:52","13:23","13:29","13:52","14:24","14:30","14:52","15:23","15:29","15:52","16:23","16:31","16:52","17:25","17:31","17:52","18:25","18:31","19:23","19:30","19:52","20:23","20:52","21:52","22:00","22:52","23:04"],
       toPal:  ["06:08","06:25","06:35","07:00","07:33","08:01","08:33","08:38","09:00","09:33","09:39","10:00","10:33","10:38","11:00","11:33","11:38","12:00","12:32","12:38","13:00","13:30","13:39","14:00","14:33","14:39","15:00","15:30","15:39","16:00","16:33","16:38","17:00","17:33","17:38","18:00","18:32","18:40","18:55","19:33","20:33","21:00","22:18"],
       note: "→ row = Cheltenham → Bristol Temple Meads (first 06:14, last 23:04). Return row = Bristol → Cheltenham (first 06:08, last 22:18). Mon–Fri; XC fastest (~40 min), GW ~1h05.",
@@ -543,6 +555,7 @@ const DATA = {
     },
     birmingham: {
       label: "Cheltenham Spa ⇄ Birmingham New Street · CrossCountry (~43 min) · Mon–Fri. For Birmingham Airport, stay on to Birmingham International (Air-Rail Link).",
+      mins: 45,   // Cheltenham⇄Birmingham New Street CrossCountry ~43 min
       toDest: ["07:14","07:18","07:40","07:55","08:12","08:40","08:59","09:12","09:40","09:59","10:12","10:40","10:59","11:12","11:40","11:59","12:12","12:40","12:55","13:12","13:40","13:59","14:12","14:40","14:59","15:12","15:40","15:59","16:12","16:40","16:55","17:12","17:40","17:59","18:12","18:40","18:55","19:12","19:43","19:59","20:12","21:07","21:12","21:53","22:57","23:02"],
       toPal:  ["05:00","05:36","06:42","07:12","07:30","07:42","08:12","08:30","08:42","09:12","09:30","09:42","10:12","10:30","10:42","11:12","11:30","11:42","12:12","12:30","12:42","13:12","13:30","13:42","14:12","14:30","14:42","15:12","15:30","15:42","16:12","16:30","16:42","17:12","17:30","17:42","18:12","18:30","18:42","19:12","19:30","20:12","20:30","21:12","21:30","22:12"],
       note: "→ row = Cheltenham → Birmingham New Street (first 07:14, last 23:02). Return row = Birmingham → Cheltenham (first 05:00, last 22:12). Mon–Fri.",
@@ -1295,14 +1308,25 @@ function timesSummary(arr){
   const freq = (med>=48&&med<=72) ? 'about hourly' : `every ~${Math.round(med/5)*5||med} min`;
   return `≈ ${freq} · ${first}–${last} · ${n}/day`;
 }
-// One direction row: bold SRC → DEST, the pattern line, and the full times behind a toggle (few times shown inline).
-function timesRow(from,to,arr){
+// Sweet spot = depart 08:00 or later AND arrive 11:00–17:00 (no early starts; lands midday/afternoon).
+const SWEET_DEP=8*60, SWEET_ARR_A=11*60, SWEET_ARR_B=17*60;
+function svc(t,mins){
+  const d=toMin(t); const a=(mins!=null)?d+mins:null; const am=a!=null?((a%1440)+1440)%1440:null;
+  return {t, arr:a, sweet: a!=null && d>=SWEET_DEP && am>=SWEET_ARR_A && am<=SWEET_ARR_B};
+}
+function svcChip(s){ return `<span class="bt${s.sweet?' sweet':''}">${s.t}${s.arr!=null?` <span class="bta">→</span> ${fShort(s.arr)}`:''}</span>`; }
+// One direction row: bold SRC → DEST, the pattern line, the green sweet-spot picks, and the full dep→arr list behind a toggle.
+function timesRow(from,to,arr,mins){
   const list=(arr||[]).filter(Boolean); const n=list.length;
-  const chips=list.map(t=>`<span class="bt">${t}</span>`).join('');
+  const svcs=list.map(t=>svc(t,mins)); const sweet=svcs.filter(s=>s.sweet);
   const dir=`<span class="btdir">${from} <span class="btarr">→</span> ${to}</span>`;
-  if(n<=6) return `<div class="btrow2">${dir}<span class="btsum">${timesSummary(arr)}</span></div><div class="btchips">${chips}</div>`;
-  return `<div class="btrow2">${dir}<span class="btsum">${timesSummary(arr)}</span></div>`
-    + `<details class="btmore"><summary>all ${n} times</summary><div class="btchips">${chips}</div></details>`;
+  const head=`<div class="btrow2">${dir}<span class="btsum">${timesSummary(arr)}</span></div>`;
+  const allChips=`<div class="btchips">${svcs.map(svcChip).join('')}</div>`;
+  if(n<=6) return head+allChips;
+  const sweetLine = sweet.length
+    ? `<div class="btsweet"><span class="btsweetlab">✓ sweet spot</span>${sweet.map(svcChip).join('')}</div>`
+    : `<div class="btsweet none">no 08:00+ / midday-arrival service on this leg</div>`;
+  return head + sweetLine + `<details class="btmore"><summary>all ${n} times (dep → arr)</summary>${allChips}</details>`;
 }
 // ---- bus timetables panel ----
 function renderBusTimes(){
@@ -1311,13 +1335,14 @@ function renderBusTimes(){
   function block(x, destName, retName){
     retName = retName || 'Palafrugell';
     return `<div class="btblock"><div class="btlabel">${x.label}</div>
-      ${timesRow(retName, destName, x.toDest)}
-      ${timesRow(destName, retName, x.toPal)}
+      ${timesRow(retName, destName, x.toDest, x.mins)}
+      ${timesRow(destName, retName, x.toPal, x.mins)}
       ${x.note?`<div class="btnote">${x.note}</div>`:''}
       <a class="btsrc" href="${x.src}" target="_blank" rel="noopener">official timetable ↗</a></div>`;
   }
   host.innerHTML = `<details class="btwrap"><summary>🚌 Bus timetables — Palafrugell ⇄ Girona / Barcelona airport</summary>
     <div class="btseason">${B.season}</div>
+    <div class="btcap">Each time is <b>departure → arrival</b> (arrival ≈ typical journey). <span class="sweetkey">green</span> = sweet spot: depart 08:00+, arrive 11:00–17:00 — no dawn starts.</div>
     <div class="btnote" style="margin:2px 0 8px"><b>Girona airport = two legs.</b> Direct airport coaches are limited, so plan it as Palafrugell ⇄ Girona station (Moventis 5/41/42) + Girona station ⇄ airport (Sagalés 607).</div>
     ${block(B.gro,'Girona station','Palafrugell')}
     ${block(B.gro_air,'Girona Airport','Girona station')}
@@ -1331,13 +1356,14 @@ function renderTrains(){
   const T=DATA.trainTimes;
   function block(x, destName, retName){
     return `<div class="btblock"><div class="btlabel">${x.label}</div>
-      ${timesRow(retName, destName, x.toDest)}
-      ${timesRow(destName, retName, x.toPal)}
+      ${timesRow(retName, destName, x.toDest, x.mins)}
+      ${timesRow(destName, retName, x.toPal, x.mins)}
       ${x.note?`<div class="btnote">${x.note}</div>`:''}
       <a class="btsrc" href="${x.src}" target="_blank" rel="noopener">live times ↗</a></div>`;
   }
   host.innerHTML = `<details class="btwrap"><summary>🚆 Train timetables — Cheltenham ⇄ Bristol / Birmingham</summary>
     <div class="btseason">${T.note}</div>
+    <div class="btcap">Each time is <b>departure → arrival</b> (arrival ≈ typical journey; XC faster than GWR). <span class="sweetkey">green</span> = sweet spot: depart 08:00+, arrive 11:00–17:00 — no dawn starts.</div>
     ${block(T.bristol,'Bristol Temple Meads','Cheltenham Spa')}
     ${block(T.birmingham,'Birmingham New Street','Cheltenham Spa')}
   </details>`;
@@ -1624,8 +1650,9 @@ function renderAdmin(){
 }
 
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "3.22";
+const VERSION = "3.23";
 const CHANGELOG = [
+  ["3.23","2026-09-05","Timetables now show <b>departure → arrival</b> for every service (arrival estimated from each route's typical journey time), and highlight the <b>sweet-spot</b> services in bold green: those departing 08:00 or later and arriving 11:00–17:00 — the civilised ones that line up with a midday/afternoon flight, no 06:15 dawn starts. Each direction surfaces its green picks up front, with the full dep→arr list behind the ‘all times’ toggle. Time chips and the source→destination labels were also given stronger, more legible colours."],
   ["3.22","2026-09-05","Bus & train timetables are far less cluttered: instead of 20+ time chips per direction, each now shows a plain-English pattern — e.g. ‘≈ hourly on the hour · 05:00–23:00’, ‘≈ hourly at :15 past’, or ‘≈ every ~25 min · 06:14–23:04’ — with the full clock-face list tucked behind a ‘all N times’ toggle. Source and destination are now shown as a bold ‘From → To’ label in an accent colour so each direction reads at a glance."],
   ["3.21","2026-09-05","The A1 ‘just landed’ helper now lists ALL the Cheltenham trains you could make within about an hour of landing, not just the earliest — each tagged by how you’d catch it: ‘bus’ (comfortable), ‘bus · tight’ (only if a bus turns up quickly), or ‘taxi’ (too tight for the bus but a ~22 min cab still makes it, e.g. a last train or overnight when buses thin to every 30 min). Gives the full menu of doable options at a glance."],
   ["3.20","2026-09-05","Made the A1 Flyer ‘just landed’ helper properly interactive. It now takes your landing time plus a slider for how long customs & bags took, and updates live as you drag: it shows when you’re through, your likely Temple Meads arrival, and the earliest Cheltenham train you make — so clearing customs in 20 min instead of 45 visibly catches an earlier train. Trains are tagged ‘comfortable’ or ‘tight’ (with the safe-bet fallback) so a close connection is honest, using a realistic half-headway bus wait instead of always assuming the worst. The stops list and the wordy explanation now live in an ℹ popup, keeping the panel focused on the interactive bus/train result."],

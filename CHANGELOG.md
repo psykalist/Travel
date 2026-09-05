@@ -3,6 +3,15 @@
 All notable changes to the Palafrugell ↔ Cheltenham Spa journey planner.
 Versions are also shown in-app (header badge + footer "Version history").
 
+## [3.23] — 2026-09-05
+- Timetables now show departure → arrival for every service (arrival estimated
+  from each route's typical journey time), and highlight the sweet-spot services
+  in bold green: those departing 08:00 or later and arriving 11:00–17:00 — the
+  civilised ones that line up with a midday/afternoon flight, no 06:15 dawn
+  starts. Each direction surfaces its green picks up front, with the full
+  dep→arr list behind the "all times" toggle.
+- Time chips and the source→destination labels were given stronger colours.
+
 ## [3.22] — 2026-09-05
 - Bus & train timetables are far less cluttered: instead of 20+ time chips per
   direction, each shows a plain-English pattern — e.g. "≈ hourly on the hour ·
