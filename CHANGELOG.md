@@ -3,6 +3,14 @@
 All notable changes to the Palafrugell ↔ Cheltenham Spa journey planner.
 Versions are also shown in-app (header badge + footer "Version history").
 
+## [3.21] — 2026-09-05
+- The A1 "just landed" helper now lists ALL the Cheltenham trains you could make
+  within about an hour of landing, not just the earliest — each tagged by how
+  you'd catch it: "bus" (comfortable), "bus · tight" (only if a bus turns up
+  quickly), or "taxi" (too tight for the bus but a ~22-min cab still makes it,
+  e.g. a last train or overnight when buses thin to every 30 min). Gives the
+  full menu of doable options at a glance.
+
 ## [3.20] — 2026-09-05
 - Made the A1 Flyer "just landed" helper properly interactive. It now takes your
   landing time plus a slider for how long customs & bags took, and updates live

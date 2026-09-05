@@ -273,6 +273,11 @@ footer { margin-top:26px; font-size:11.5px; color:#8a93a0; border-top:1px solid 
 .flytag { font-size:11.5px; font-weight:700; border-radius:6px; padding:2px 8px; margin-left:6px; white-space:normal; }
 .flytag.ok { background:#e3f5ea; color:#0d7a4f; }
 .flytag.tight { background:#fbf1dd; color:#9a6a00; }
+.flytag.taxi { background:#e7eefb; color:#1a53d0; }
+.flytrains { margin-top:7px; display:flex; flex-direction:column; gap:4px; }
+.flytrow { display:flex; align-items:center; gap:10px; padding:6px 9px; border:1px solid #e6ebf2; border-radius:8px; background:#fff; }
+.flytrow.first { border-color:#bfe0cb; background:#f4fbf6; }
+.flytt { font-size:16px; font-weight:800; font-variant-numeric:tabular-nums; color:#243; min-width:52px; }
 .flyinfo-btn { background:#eef4ff; border:1px solid #d3e0f7; color:#1a53d0; border-radius:8px; padding:4px 10px; font-size:12px; font-weight:700; cursor:pointer; margin-left:2px; }
 .flyinfo-btn:hover { background:#e2ecfd; }
 /* admin */
@@ -430,7 +435,7 @@ const DATA = {
     flyer: { name:"Airport Flyer A1",
              freq:"~8 min · 07:00–19:00, then ~30 min · 19:00–07:00 (runs 24h)",
              dur:"~25 min to Temple Meads (30–40 to the centre)", fare:"£9.50",
-             runs24:true, rideTM:25, rideCity:37,
+             runs24:true, rideTM:25, rideCity:37, taxiTM:22,   // taxiTM = ~min Airport→Temple Meads by cab (~£40)
              // headway bands in minutes-from-midnight; overnight band wraps past midnight (1140→1860 = 19:00→07:00 next day)
              bands:[ {from:420, to:1140, head:8,  label:"Daytime"},
                      {from:1140,to:1860, head:30, label:"Evening & overnight"} ],
@@ -1316,23 +1321,31 @@ function flyerCalc(){
   const clear  = land + cust;                       // through customs at this clock time
   const band   = flyHeadway(clear);
   const wAvg   = Math.ceil(band.head/2);             // typical turn-up-and-go wait (half the gap)
-  const tmTyp  = clear + wAvg + f.rideTM;            // likely Temple Meads arrival
-  const tmWorst= clear + band.head + f.rideTM;       // if you just miss a bus
-  const XCH=8;                                       // minutes to change onto the train
+  const XCH_BUS=8, XCH_TAXI=5;                       // mins to change onto the train (taxi drops at the station)
+  const tmTyp  = clear + wAvg + f.rideTM;            // likely Temple Meads arrival by bus
+  const tmWorst= clear + band.head + f.rideTM;       // by bus if you just miss one
+  const taxiArr= clear + 5 + (f.taxiTM||22);         // by cab (5 min to grab one, then the ride)
+  // How you'd make a given train departure T — the fastest mode that works, or null if unreachable.
+  function feas(T){
+    if(T >= tmWorst + XCH_BUS) return {cls:'ok',    txt:'bus'};
+    if(T >= tmTyp   + XCH_BUS) return {cls:'tight', txt:'bus · tight'};
+    if(T >= taxiArr + XCH_TAXI)return {cls:'taxi',  txt:'taxi'};
+    return null;
+  }
   const trains = (DATA.trainTimes.bristol.toPal||[]).map(toMin).filter(x=>x!=null).sort((a,b)=>a-b);
-  const caught = trains.find(x=>x>=tmTyp+XCH);       // earliest train on the likely arrival
-  const safe   = trains.find(x=>x>=tmWorst+XCH);     // the one you'd still make if the bus is slow
-  const tight  = caught!=null && safe!=null && caught<safe;   // caught only if the bus comes soon
-  const after  = caught!=null ? trains.filter(x=>x>caught).slice(0,2) : [];
-  let html = `<div class="flyout">Through customs ~<b>${fShort(clear)}</b> · A1 is turn-up-and-go <b>every ~${band.head} min</b> now, `
-    + `so into <b>Temple Meads ~${fShort(tmTyp)}</b> (allow to ~${fShort(tmWorst)} if you just miss a bus).</div>`;
-  if(caught!=null){
-    html += `<div class="flyout" style="margin-top:10px">Earliest Cheltenham train you make (Mon–Fri):</div>`
-      + `<div style="margin-top:5px"><span class="flycatch">${fShort(caught)}</span>`
-      + (tight?` <span class="flytag tight">tight — needs a bus within ~${wAvg} min${safe!=null?`; safe bet ${fShort(safe)}`:''}</span>`
-              :` <span class="flytag ok">comfortable</span>`)
-      + (after.length?`<div class="flyafter" style="margin-top:5px">then ${after.map(fShort).join(', ')}</div>`:``) + `</div>`
-      + `<div class="flynote">Drag the slider — a quicker customs queue moves this chain earlier and can catch an earlier train. <a href="#" onclick="openFlyerInfo();return false;">How this is worked out ›</a></div>`;
+  const feasible = trains.map(T=>({T,m:feas(T)})).filter(r=>r.m);
+  let html = `<div class="flyout">Through customs ~<b>${fShort(clear)}</b> · A1 is turn-up-and-go <b>every ~${band.head} min</b> now → <b>Temple Meads ~${fShort(tmTyp)}</b> by bus (or ~${fShort(taxiArr)} by cab).</div>`;
+  if(feasible.length){
+    const first=feasible[0].T;
+    const horizon=Math.max(land+60, first+45);                 // ~1 hr of options after landing
+    let show=feasible.filter(r=>r.T<=horizon).slice(0,8);
+    if(!show.length) show=feasible.slice(0,4);
+    const anyTaxi=show.some(r=>r.m.cls==='taxi');
+    html += `<div class="flyout" style="margin-top:10px">Cheltenham trains you could make (within ~1 hr, Mon–Fri):</div>`
+      + `<div class="flytrains">` + show.map((r,i)=>
+          `<div class="flytrow${i===0?' first':''}"><span class="flytt">${fShort(r.T)}</span><span class="flytag ${r.m.cls}">${r.m.txt}</span></div>`
+        ).join('') + `</div>`
+      + `<div class="flynote">${anyTaxi?'<b>taxi</b> = too tight for the bus but a cab (~'+(f.taxiTM||22)+' min, ~£40) makes it — handy for a last train. ':''}Drag the slider — a quicker customs queue opens up earlier trains. <a href="#" onclick="openFlyerInfo();return false;">How this is worked out ›</a></div>`;
   } else {
     html += `<div class="flyout" style="margin-top:10px">No Cheltenham train catchable after that tonight — last departs <b>${fShort(trains[trains.length-1])}</b>; first next morning <b>${fShort(trains[0])}</b>. The A1 still runs (~30 min overnight) so you can reach Temple Meads and wait for the first train.</div>`
       + `<div class="flynote"><a href="#" onclick="openFlyerInfo();return false;">How this is worked out ›</a></div>`;
@@ -1352,7 +1365,13 @@ function openFlyerInfo(){
       <p>Runs <b>24 hours, 7 days a week</b>, turn-up-and-go — no fixed departure list, so you just take the next one. Frequency: <b>every ~8 min 07:00–19:00</b>, then <b>every ~30 min 19:00–07:00</b>.</p>
       <p><b>Airport → Temple Meads</b> is ~${f.rideTM} min (${f.stopsTM.length} stops); it carries on to the city centre / Bus Station (~${f.rideCity} min). Fare ${f.fare}; a First ticket also covers onward First buses in the Bristol zone.</p>
       <div style="margin:8px 0 10px"><div class="btlabel">Stops · Airport → city (Temple Meads is stop ${f.stopsTM.length}):</div><div class="flystops">${stopChips(f.stopsCity)}</div></div>
-      <p>The <b>“just landed” helper</b> takes your landing time plus how long customs &amp; bags took, then assumes a typical wait of about <b>half a frequency gap</b> for the turn-up-and-go bus, a ~${f.rideTM}-min ride, and <b>8 min to change</b> onto the train at Temple Meads. A train you’d only make if a bus turns up quickly is flagged <b>“tight”</b>, with the later <b>safe-bet</b> train shown alongside. The Cheltenham trains are the real <b>Mon–Fri</b> Bristol→Cheltenham times (CrossCountry ~40 min, GWR ~1h05); Sat/Sun run lighter, so check live then.</p>
+      <p>The <b>“just landed” helper</b> takes your landing time plus how long customs &amp; bags took, then lists every Cheltenham train you could make in about the next hour, tagged by how:</p>
+      <ul style="margin:4px 0 8px;padding-left:20px">
+        <li><b>bus</b> — comfortable on the A1 even if you just miss one (a full frequency gap + a ~${f.rideTM}-min ride + 8 min to change).</li>
+        <li><b>bus · tight</b> — makeable only if a bus turns up quickly (about half a gap of wait).</li>
+        <li><b>taxi</b> — too tight for the bus, but a cab (~${f.taxiTM||22} min, ~£40) still makes it — mainly the last trains or overnight when buses thin to every 30 min.</li>
+      </ul>
+      <p>The Cheltenham trains are the real <b>Mon–Fri</b> Bristol→Cheltenham times (CrossCountry ~40 min, GWR ~1h05); Sat/Sun run lighter, so check live then.</p>
       <p style="color:#667">Frequency verified 5 Sep 2026 from Bristol Airport. Always confirm live before travelling.</p>
       <a class="btsrc" href="${f.src}" target="_blank" rel="noopener">official flyer timetable ↗</a>
     </div>`;
@@ -1563,8 +1582,9 @@ function renderAdmin(){
 }
 
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "3.20";
+const VERSION = "3.21";
 const CHANGELOG = [
+  ["3.21","2026-09-05","The A1 ‘just landed’ helper now lists ALL the Cheltenham trains you could make within about an hour of landing, not just the earliest — each tagged by how you’d catch it: ‘bus’ (comfortable), ‘bus · tight’ (only if a bus turns up quickly), or ‘taxi’ (too tight for the bus but a ~22 min cab still makes it, e.g. a last train or overnight when buses thin to every 30 min). Gives the full menu of doable options at a glance."],
   ["3.20","2026-09-05","Made the A1 Flyer ‘just landed’ helper properly interactive. It now takes your landing time plus a slider for how long customs & bags took, and updates live as you drag: it shows when you’re through, your likely Temple Meads arrival, and the earliest Cheltenham train you make — so clearing customs in 20 min instead of 45 visibly catches an earlier train. Trains are tagged ‘comfortable’ or ‘tight’ (with the safe-bet fallback) so a close connection is honest, using a realistic half-headway bus wait instead of always assuming the worst. The stops list and the wordy explanation now live in an ℹ popup, keeping the panel focused on the interactive bus/train result."],
   ["3.19","2026-09-05","Bristol Airport Flyer (A1) now has its own panel with the real frequency cutoffs instead of vague ‘more often in the daytime’ wording: every ~8 min from 07:00–19:00, then every ~30 min from 19:00–07:00, running 24 hours, 7 days (source: Bristol Airport). It lists the stops (Airport → Parson Street → Bedminster → Temple Meads, 4 stops; on to City Centre / Bus Station) and the ~25 min ride to Temple Meads. Added a ‘just landed?’ helper: enter the time you clear customs and it shows how soon the next bus leaves, when you’d reach Temple Meads, and which Cheltenham trains you could then catch — so a fast passport queue instantly shows whether an earlier train is in reach."],
   ["3.18","2026-09-02","Refresh: Girona-Birmingham now shows Sun/Tue/Thu/Fri each way (FR4415 out, FR4414 home) - it was hiding every Thursday flight; and Palafrugell to Girona switched to the winter Moventis E3 sheet (Sep 2026-Jun 2027) with the Mon-Fri departure times. Return and weekend times still to be confirmed."],
