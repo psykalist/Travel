@@ -242,7 +242,17 @@ footer { margin-top:26px; font-size:11.5px; color:#8a93a0; border-top:1px solid 
 .btblock { margin-bottom:16px; }
 .btlabel { font-size:12.8px; color:#455; margin-bottom:7px; }
 .btrow { display:flex; flex-wrap:wrap; gap:5px; align-items:center; margin-bottom:6px; }
-.btdir { font-size:11.5px; font-weight:700; color:#8a93a0; min-width:96px; }
+.btdir { font-size:13.5px; font-weight:800; color:#0b6e3f; letter-spacing:.01em; }
+.btdir .btarr { color:#c05a1f; font-weight:800; margin:0 3px; }
+.btrow2 { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 12px; margin:2px 0 3px; }
+.btsum { font-size:12.5px; color:#455; font-variant-numeric:tabular-nums; }
+.btchips { display:flex; flex-wrap:wrap; gap:5px; margin:4px 0 10px; }
+.btmore { margin:2px 0 10px; }
+.btmore > summary { cursor:pointer; font-size:12px; font-weight:600; color:#1a53d0; list-style:none; }
+.btmore > summary::-webkit-details-marker { display:none; }
+.btmore > summary::before { content:"▸ "; }
+.btmore[open] > summary::before { content:"▾ "; }
+.btmore[open] > summary { margin-bottom:6px; }
 .bt { background:#eef4ff; border:1px solid #d3e0f7; border-radius:6px; padding:2px 7px; font-size:12px; font-variant-numeric:tabular-nums; }
 .btnote { font-size:11.5px; color:#b26a00; margin:5px 0; }
 .btsrc { font-size:12px; color:#1a53d0; text-decoration:none; font-weight:600; }
@@ -1260,16 +1270,49 @@ function buf(html,cls){ return {html,cls:cls||''}; }
 // ============================================================================
 // RENDER
 // ============================================================================
+// ---- timetable compression: turn a long clock-face list into a pattern line ----
+// e.g. ["05:00".."23:00"] -> "≈ hourly on the hour · 05:00–23:00 · 19/day".
+// Arrays are authored in chronological order (may wrap past midnight) — never re-sort them.
+function timesSummary(arr){
+  const clean=(arr||[]).filter(Boolean); const n=clean.length; if(!n) return '';
+  const first=clean[0], last=clean[n-1];
+  if(n===1) return `1 service · ${first}`;
+  if(n<=6) return `${n} services · ${first}–${last}`;
+  const mins=clean.map(toMin);
+  const cnt={}; mins.forEach(m=>{const mm=((m%60)+60)%60; cnt[mm]=(cnt[mm]||0)+1;});
+  const entries=Object.entries(cnt).map(([mm,c])=>[+mm,c]).sort((a,b)=>b[1]-a[1]);
+  const pad=x=>String(x).padStart(2,'0'); const [domMin,domCnt]=entries[0];
+  if(entries.length<=2 && domCnt/n>=0.7){
+    const at=domMin===0?'on the hour':`at :${pad(domMin)} past`; const extra=n-domCnt;
+    return `≈ hourly ${at} · ${first}–${last}`+(extra?` (+${extra} extra)`:'')+` · ${n}/day`;
+  }
+  if(entries.length===2 && (entries[0][1]+entries[1][1])===n){
+    const a=pad(Math.min(entries[0][0],entries[1][0])), b=pad(Math.max(entries[0][0],entries[1][0]));
+    return `≈ twice hourly (:${a} &amp; :${b}) · ${first}–${last} · ${n}/day`;
+  }
+  const gaps=[]; for(let i=1;i<n;i++){ let g=mins[i]-mins[i-1]; if(g<0)g+=1440; gaps.push(g); }
+  gaps.sort((a,b)=>a-b); const med=gaps[Math.floor(gaps.length/2)]||0;
+  const freq = (med>=48&&med<=72) ? 'about hourly' : `every ~${Math.round(med/5)*5||med} min`;
+  return `≈ ${freq} · ${first}–${last} · ${n}/day`;
+}
+// One direction row: bold SRC → DEST, the pattern line, and the full times behind a toggle (few times shown inline).
+function timesRow(from,to,arr){
+  const list=(arr||[]).filter(Boolean); const n=list.length;
+  const chips=list.map(t=>`<span class="bt">${t}</span>`).join('');
+  const dir=`<span class="btdir">${from} <span class="btarr">→</span> ${to}</span>`;
+  if(n<=6) return `<div class="btrow2">${dir}<span class="btsum">${timesSummary(arr)}</span></div><div class="btchips">${chips}</div>`;
+  return `<div class="btrow2">${dir}<span class="btsum">${timesSummary(arr)}</span></div>`
+    + `<details class="btmore"><summary>all ${n} times</summary><div class="btchips">${chips}</div></details>`;
+}
 // ---- bus timetables panel ----
 function renderBusTimes(){
   const host=document.getElementById('bustimes'); if(!host) return;
   const B=DATA.busTimes;
-  const chips=a=>a.map(t=>`<span class="bt">${t}</span>`).join('');
   function block(x, destName, retName){
     retName = retName || 'Palafrugell';
     return `<div class="btblock"><div class="btlabel">${x.label}</div>
-      <div class="btrow"><span class="btdir">→ ${destName}</span>${chips(x.toDest)}</div>
-      <div class="btrow"><span class="btdir">→ ${retName}</span>${chips(x.toPal)}</div>
+      ${timesRow(retName, destName, x.toDest)}
+      ${timesRow(destName, retName, x.toPal)}
       ${x.note?`<div class="btnote">${x.note}</div>`:''}
       <a class="btsrc" href="${x.src}" target="_blank" rel="noopener">official timetable ↗</a></div>`;
   }
@@ -1286,11 +1329,10 @@ function renderBusTimes(){
 function renderTrains(){
   const host=document.getElementById('traintimes'); if(!host) return;
   const T=DATA.trainTimes;
-  const chips=a=>a.map(t=>`<span class="bt">${t}</span>`).join('');
   function block(x, destName, retName){
     return `<div class="btblock"><div class="btlabel">${x.label}</div>
-      <div class="btrow"><span class="btdir">→ ${destName}</span>${chips(x.toDest)}</div>
-      <div class="btrow"><span class="btdir">→ ${retName}</span>${chips(x.toPal)}</div>
+      ${timesRow(retName, destName, x.toDest)}
+      ${timesRow(destName, retName, x.toPal)}
       ${x.note?`<div class="btnote">${x.note}</div>`:''}
       <a class="btsrc" href="${x.src}" target="_blank" rel="noopener">live times ↗</a></div>`;
   }
@@ -1582,8 +1624,9 @@ function renderAdmin(){
 }
 
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "3.21";
+const VERSION = "3.22";
 const CHANGELOG = [
+  ["3.22","2026-09-05","Bus & train timetables are far less cluttered: instead of 20+ time chips per direction, each now shows a plain-English pattern — e.g. ‘≈ hourly on the hour · 05:00–23:00’, ‘≈ hourly at :15 past’, or ‘≈ every ~25 min · 06:14–23:04’ — with the full clock-face list tucked behind a ‘all N times’ toggle. Source and destination are now shown as a bold ‘From → To’ label in an accent colour so each direction reads at a glance."],
   ["3.21","2026-09-05","The A1 ‘just landed’ helper now lists ALL the Cheltenham trains you could make within about an hour of landing, not just the earliest — each tagged by how you’d catch it: ‘bus’ (comfortable), ‘bus · tight’ (only if a bus turns up quickly), or ‘taxi’ (too tight for the bus but a ~22 min cab still makes it, e.g. a last train or overnight when buses thin to every 30 min). Gives the full menu of doable options at a glance."],
   ["3.20","2026-09-05","Made the A1 Flyer ‘just landed’ helper properly interactive. It now takes your landing time plus a slider for how long customs & bags took, and updates live as you drag: it shows when you’re through, your likely Temple Meads arrival, and the earliest Cheltenham train you make — so clearing customs in 20 min instead of 45 visibly catches an earlier train. Trains are tagged ‘comfortable’ or ‘tight’ (with the safe-bet fallback) so a close connection is honest, using a realistic half-headway bus wait instead of always assuming the worst. The stops list and the wordy explanation now live in an ℹ popup, keeping the panel focused on the interactive bus/train result."],
   ["3.19","2026-09-05","Bristol Airport Flyer (A1) now has its own panel with the real frequency cutoffs instead of vague ‘more often in the daytime’ wording: every ~8 min from 07:00–19:00, then every ~30 min from 19:00–07:00, running 24 hours, 7 days (source: Bristol Airport). It lists the stops (Airport → Parson Street → Bedminster → Temple Meads, 4 stops; on to City Centre / Bus Station) and the ~25 min ride to Temple Meads. Added a ‘just landed?’ helper: enter the time you clear customs and it shows how soon the next bus leaves, when you’d reach Temple Meads, and which Cheltenham trains you could then catch — so a fast passport queue instantly shows whether an earlier train is in reach."],

@@ -3,6 +3,14 @@
 All notable changes to the Palafrugell ↔ Cheltenham Spa journey planner.
 Versions are also shown in-app (header badge + footer "Version history").
 
+## [3.22] — 2026-09-05
+- Bus & train timetables are far less cluttered: instead of 20+ time chips per
+  direction, each shows a plain-English pattern — e.g. "≈ hourly on the hour ·
+  05:00–23:00", "≈ hourly at :15 past", or "≈ every ~25 min · 06:14–23:04" —
+  with the full clock-face list tucked behind an "all N times" toggle.
+- Source and destination now show as a bold "From → To" label in an accent
+  colour so each direction reads at a glance.
+
 ## [3.21] — 2026-09-05
 - The A1 "just landed" helper now lists ALL the Cheltenham trains you could make
   within about an hour of landing, not just the earliest — each tagged by how
