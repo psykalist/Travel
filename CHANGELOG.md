@@ -3,6 +3,24 @@
 All notable changes to the Palafrugell ↔ Cheltenham Spa journey planner.
 Versions are also shown in-app (header badge + footer "Version history").
 
+## [3.19] — 2026-09-05
+- Bristol Airport Flyer (A1) now has its own panel with the real frequency
+  cutoffs instead of vague "more often in the daytime" wording: every ~8 min
+  from 07:00–19:00, then every ~30 min from 19:00–07:00, running 24 hours,
+  7 days a week (source: Bristol Airport). It lists the stops (Airport →
+  Parson Street → Bedminster → Temple Meads, 4 stops; on to City Centre /
+  Bus Station) and the ~25 min ride to Temple Meads.
+- Added a "just landed?" helper: enter the time you clear customs and it shows
+  how soon the next bus leaves, when you'd reach Temple Meads, and which
+  Cheltenham trains you could then catch — so a fast passport queue instantly
+  shows whether an earlier train is in reach.
+
+## [3.18] — 2026-09-02
+- Refresh: Girona–Birmingham now shows Sun/Tue/Thu/Fri each way (FR4415 out,
+  FR4414 home) — it was hiding every Thursday flight; and Palafrugell→Girona
+  switched to the winter Moventis E3 sheet (Sep 2026–Jun 2027) with the Mon–Fri
+  departure times. Return and weekend times still to be confirmed.
+
 ## [3.17] — 2026-08-28
 - Self-maintaining refresh is now live. A monthly cloud task re-verifies every
   timetable against the official sites, runs the built-in self-check, and pushes

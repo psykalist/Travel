@@ -246,6 +246,21 @@ footer { margin-top:26px; font-size:11.5px; color:#8a93a0; border-top:1px solid 
 .bt { background:#eef4ff; border:1px solid #d3e0f7; border-radius:6px; padding:2px 7px; font-size:12px; font-variant-numeric:tabular-nums; }
 .btnote { font-size:11.5px; color:#b26a00; margin:5px 0; }
 .btsrc { font-size:12px; color:#1a53d0; text-decoration:none; font-weight:600; }
+/* Bristol Airport Flyer (A1) panel */
+.flyband { width:100%; border-collapse:collapse; font-size:13px; margin:6px 0 10px; }
+.flyband th { text-align:left; color:#8a93a0; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; padding:5px 8px; border-bottom:1px solid #eef1f6; }
+.flyband td { padding:7px 8px; border-bottom:1px solid #f2f4f8; font-variant-numeric:tabular-nums; }
+.flyband td.hw { font-weight:700; color:#0d7a4f; }
+.flystops { display:flex; flex-wrap:wrap; gap:5px; align-items:center; margin:4px 0 6px; }
+.flystop { background:#eef4ff; border:1px solid #d3e0f7; border-radius:6px; padding:2px 8px; font-size:11.5px; }
+.flystop .n { color:#8a93a0; margin-right:4px; font-variant-numeric:tabular-nums; }
+.flycalc { background:#f4fbf6; border:1px solid #cfead9; border-radius:11px; padding:12px 13px; margin:6px 0 4px; }
+.flycalc label { font-size:12.5px; font-weight:700; color:#334; display:block; margin-bottom:7px; }
+.flycalc input[type=time] { font-size:15px; padding:6px 9px; border:1px solid #cfd8e2; border-radius:8px; background:#fff; color:#243; }
+.flyout { margin-top:10px; font-size:13px; color:#243; line-height:1.5; }
+.flyout b { color:#0d5c38; }
+.flytrain { display:inline-block; background:#e7f3ea; border:1px solid #bfe0cb; border-radius:6px; padding:3px 9px; margin:5px 6px 0 0; font-size:13px; font-variant-numeric:tabular-nums; font-weight:700; color:#0d5c38; }
+.flynote { font-size:11.5px; color:#667; margin-top:8px; line-height:1.45; }
 /* admin */
 .adwrap { background:#f4f8ff; border:1px solid #d3e0f7; border-radius:14px; padding:4px 16px; margin:18px 0; box-shadow:0 2px 10px rgba(26,83,208,.05); }
 .adwrap summary { cursor:pointer; font-weight:700; font-size:14px; color:#334; padding:10px 0; }
@@ -365,6 +380,7 @@ tr.ad-expired td { background:#fef7f7; }
     <div class="legs" id="legs-home"></div>
   </section>
 
+  <div id="flyerpanel"></div>
   <div id="bustimes"></div>
   <div id="traintimes"></div>
   <footer id="foot"></footer>
@@ -380,7 +396,7 @@ tr.ad-expired td { background:#fef7f7; }
 // against the official sites, rewrites the affected values, and bumps lastUpdated + LAST_VERIFIED.
 // ============================================================================
 const DATA = {
-  lastUpdated: "2026-09-02",
+  lastUpdated: "2026-09-05",
   eurToGbp: 0.85,                       // approx; refreshed weekly
 
   buses: {
@@ -397,7 +413,16 @@ const DATA = {
     bcn_bhx: { carrier:"Jet2 / Ryanair / easyJet / Vueling", season:"Year-round", days:"Daily", dur:"~2h15", fare:"£40–150", depOut:"11:30", depHome:"07:30" }
   },
   bristol: {
-    flyer: { name:"Airport Flyer A1", freq:"Every 8–12 min peak, hourly overnight (24h)", dur:"30–40 min", fare:"£9.50" },
+    flyer: { name:"Airport Flyer A1",
+             freq:"~8 min · 07:00–19:00, then ~30 min · 19:00–07:00 (runs 24h)",
+             dur:"~25 min to Temple Meads (30–40 to the centre)", fare:"£9.50",
+             runs24:true, rideTM:25, rideCity:37,
+             // headway bands in minutes-from-midnight; overnight band wraps past midnight (1140→1860 = 19:00→07:00 next day)
+             bands:[ {from:420, to:1140, head:8,  label:"Daytime"},
+                     {from:1140,to:1860, head:30, label:"Evening & overnight"} ],
+             stopsTM:["Bristol Airport","Parson Street","Bedminster","Temple Meads Station"],
+             stopsCity:["Bristol Airport","Parson Street","Bedminster","Temple Meads Station","Bristol City Centre","Bristol Bus Station"],
+             src:"https://flyer.bristolairport.co.uk/timetables" },
     train: { op:"CrossCountry / GWR", freq:"~2–3/hr (every 20–30 min)", dur:"40–65 min", last:"22:18", fare:"£4–17" }
   },
   birmingham: {
@@ -499,8 +524,8 @@ const DATA = {
   // DATA SOURCE REGISTRY — validity/expiry of each static timetable (drives the Admin panel).
   // validTo = last day the printed timetable is valid (YYYY-MM-DD), or null for ongoing/frequency services.
   sources: [
-    {id:"flyer",   label:"Bristol Airport Flyer (A1)", validFrom:null, validTo:null,
-      src:"https://flyer.bristolairport.co.uk/timetables", note:"24/7 turn-up-and-go frequency — no seasonal expiry"},
+    {id:"flyer",   label:"Bristol Airport Flyer (A1)", validFrom:"2026-09-05", validTo:null,
+      src:"https://flyer.bristolairport.co.uk/timetables", note:"24/7 turn-up-and-go. Frequency verified 5 Sep 2026 (Bristol Airport): ~8 min 07:00–19:00, ~30 min 19:00–07:00. No seasonal expiry — re-confirm the two headway bands occasionally."},
     {id:"bus_gro", label:"Moventis 5/41/42 · Palafrugell ⇄ Girona", validFrom:"2026-09-01", validTo:"2027-06-30",
       src:"https://www.moventis.es/sites/moventis/files/line/files/e3_girona-costa_brava_092026-062027.pdf",
       note:"Current summer sheet (Jul–Aug 2026); winter sheet is Sep–Jun. Times below are the winter baseline — see PDF for exact summer departures", unconfirmed:true},
@@ -1257,6 +1282,71 @@ function renderTrains(){
   </details>`;
 }
 
+// ---- Bristol Airport Flyer (A1): frequency bands + "just landed" helper ----
+// Which frequency band a clock-minute falls in (overnight band wraps past midnight).
+function flyHeadway(min){
+  const b=DATA.bristol.flyer.bands; const m=((min%1440)+1440)%1440;
+  for(const x of b){ if(m>=x.from && m<x.to) return x; }
+  const mm=m+1440; for(const x of b){ if(mm>=x.from && mm<x.to) return x; }
+  return b[b.length-1];
+}
+// Recompute the "just landed" result from the time input (or now).
+function flyerCalc(){
+  const f=DATA.bristol.flyer; const el=document.getElementById('flyresult'); if(!el) return;
+  const inp=document.getElementById('flytime');
+  const v=inp&&inp.value?inp.value:null;
+  const t = v!=null ? toMin(v) : (()=>{const d=new Date(); return d.getHours()*60+d.getMinutes();})();
+  const band=flyHeadway(t);
+  const arrBest  = t + 2 + f.rideTM;                 // next bus almost here
+  const arrWorst = t + band.head + f.rideTM;         // just missed one — full headway wait
+  const cut = arrWorst + 8;                          // 8 min to change at Temple Meads
+  const trains=(DATA.trainTimes.bristol.toPal||[]).map(toMin).filter(x=>x!=null).sort((a,b)=>a-b);
+  const next=trains.filter(x=>x>=cut).slice(0,3);
+  let html = `<div class="flyout">Buses are running <b>every ~${band.head} min</b> now (${band.label.toLowerCase()}), so expect to board within ~${band.head} min. `
+    + `Reach <b>Temple Meads by ~${fromMin(arrBest).replace(/ \+\d+d/,'')}–${fromMin(arrWorst)}</b> (≈${f.rideTM} min ride).</div>`;
+  if(next.length){
+    html += `<div class="flyout" style="margin-top:9px">Cheltenham trains you could then catch (Mon–Fri):<br>`
+      + next.map(x=>`<span class="flytrain">${fromMin(x)}</span>`).join('') + `</div>`
+      + `<div class="flynote">Train ~40 min (CrossCountry) or ~1h05 (GWR); 8 min allowed to change at Temple Meads. Clearing the airport faster shifts this whole window earlier — change the time above to check for an earlier bus/train.</div>`;
+  } else {
+    html += `<div class="flyout" style="margin-top:9px">No Cheltenham train catchable after that — last departs <b>${fromMin(trains[trains.length-1])}</b>; first next morning <b>${fromMin(trains[0])}</b>.</div>`
+      + `<div class="flynote">The A1 itself still runs (every ~30 min overnight), so you can still reach Temple Meads — you'd just wait for the first morning train.</div>`;
+  }
+  el.innerHTML=html;
+}
+// ---- Bristol Airport Flyer (A1) panel ----
+function renderFlyer(){
+  const host=document.getElementById('flyerpanel'); if(!host) return;
+  const f=DATA.bristol.flyer;
+  const bandRows=f.bands.map(b=>{
+    const to=b.to>=1440?b.to-1440:b.to;
+    return `<tr><td>${fromMin(b.from)}–${fromMin(to)}</td><td class="hw">every ~${b.head} min</td><td>${b.label}</td></tr>`;
+  }).join('');
+  const stopChips=arr=>arr.map((s,i)=>`<span class="flystop"><span class="n">${i+1}</span>${s}</span>`).join('');
+  const d=new Date(); const nowV=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  host.innerHTML = `<details class="btwrap" open><summary>🚌 Bristol Airport Flyer (A1) — frequency &amp; “just landed” helper</summary>
+    <div class="btblock">
+      <div class="btlabel"><b>How often it runs — the actual cutoffs, 7 days a week:</b></div>
+      <table class="flyband"><thead><tr><th>Time of day</th><th>Frequency</th><th></th></tr></thead>
+        <tbody>${bandRows}</tbody></table>
+      <div class="flynote" style="color:#455">Runs <b>24 hours</b>, turn-up-and-go — no fixed departures to catch. <b>Airport → Temple Meads ~${f.rideTM} min</b> (${f.stopsTM.length} stops); on to the city centre / Bus Station ~${f.rideCity} min. Fare ${f.fare}.</div>
+    </div>
+    <div class="btblock">
+      <div class="btlabel">Stops · Airport → city (Temple Meads is stop ${f.stopsTM.length}):</div>
+      <div class="flystops">${stopChips(f.stopsCity)}</div>
+    </div>
+    <div class="btblock">
+      <div class="flycalc">
+        <label for="flytime">Just landed? Through customs by (Bristol time):</label>
+        <input type="time" id="flytime" value="${nowV}" oninput="flyerCalc()">
+        <div id="flyresult"></div>
+      </div>
+    </div>
+    <a class="btsrc" href="${f.src}" target="_blank" rel="noopener">official flyer timetable ↗</a>
+  </details>`;
+  flyerCalc();
+}
+
 // ---- admin: data-source expiry tracker ----
 function srcStatus(s){
   if(!s.validTo) return {k:'ok', t:s.unconfirmed?'ongoing · confirm':'ongoing'};
@@ -1338,7 +1428,7 @@ function renderInfoSources(){
 // (b) show each route's operating days, so a wrong one is spotted at a glance
 // instead of by trial-and-error. These are updated by the refresh task.
 const REFRESH_CADENCE = 'monthly';
-const LAST_VERIFIED   = '2026-09-02';   // last time a human/task re-verified sources; refresh task updates this
+const LAST_VERIFIED   = '2026-09-05';   // last time a human/task re-verified sources; refresh task updates this
 const NEXT_VERIFIED   = '2026-10-02';   // next scheduled automated check
 const DOWFULL = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 // which registry source backs each flight route (for expiry-aware warnings)
@@ -1429,8 +1519,9 @@ function renderAdmin(){
 }
 
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "3.18";
+const VERSION = "3.19";
 const CHANGELOG = [
+  ["3.19","2026-09-05","Bristol Airport Flyer (A1) now has its own panel with the real frequency cutoffs instead of vague ‘more often in the daytime’ wording: every ~8 min from 07:00–19:00, then every ~30 min from 19:00–07:00, running 24 hours, 7 days (source: Bristol Airport). It lists the stops (Airport → Parson Street → Bedminster → Temple Meads, 4 stops; on to City Centre / Bus Station) and the ~25 min ride to Temple Meads. Added a ‘just landed?’ helper: enter the time you clear customs and it shows how soon the next bus leaves, when you’d reach Temple Meads, and which Cheltenham trains you could then catch — so a fast passport queue instantly shows whether an earlier train is in reach."],
   ["3.18","2026-09-02","Refresh: Girona-Birmingham now shows Sun/Tue/Thu/Fri each way (FR4415 out, FR4414 home) - it was hiding every Thursday flight; and Palafrugell to Girona switched to the winter Moventis E3 sheet (Sep 2026-Jun 2027) with the Mon-Fri departure times. Return and weekend times still to be confirmed."],
   ["3.17","2026-08-28","Self-maintaining refresh is now live. A monthly cloud task re-verifies every timetable against the official sites, runs the built-in self-check, and pushes any update to GitHub on its own — your phone updates on next open, and it only messages Kieran when something changed or couldn’t be confirmed (procedure in REFRESH_PLAYBOOK.md). Standing rule from here on: EVERY change to this app, automated or manual, is recorded in this changelog."],
   ["3.16","2026-08-28","Made the app self-aware about its own data. A built-in self-check now runs on every load: it flags internal contradictions (operating-days list that disagrees with its own description, missing/blank days, a schedule used past its season end) and surfaces a per-route ‘flights shown on these days’ table so a wrong day is caught at a glance instead of by trial. Also removed the false claim that a background task refreshed data every Monday (no such task existed) — the panels now state the truth: the page can't read airlines live, a monthly task re-verifies sources and pushes updates, with last-checked / next-check dates shown. Added daysText guards to the Girona schedules so a half-finished edit trips the self-check."],
@@ -1507,6 +1598,7 @@ function render(){
     ['cost-'+side,'scan-'+side,'legs-'+side].forEach(id=>{ const e=document.getElementById(id); if(e) e.style.display=f?'':'none'; });
   });
   renderItinerary();
+  renderFlyer();
   renderBusTimes();
   renderTrains();
   renderInfoSources();

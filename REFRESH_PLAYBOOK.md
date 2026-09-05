@@ -50,7 +50,14 @@ they disagree. When you change operating days, change BOTH. Never edit one alone
 5. **Moventis 5/41/42** Palafrugell⇄Girona (`bus_gro`) — summer vs winter sheet. Source link in registry.
 6. **Sagalés 607** Girona station⇄airport (`bus_gro_air`) — https://www.sagales.com/en/linia/607 .
 7. **Moventis line 1** Palafrugell⇄Barcelona airport (`bus_bcn`).
-8. **Bristol Airport Flyer A1** (`flyer`) — frequency service; rarely changes.
+8. **Bristol Airport Flyer A1** (`flyer`) — frequency service; rarely changes. Data now
+   lives in `DATA.bristol.flyer` as headway **bands** (minutes-from-midnight): currently
+   `07:00–19:00 every ~8 min`, `19:00–07:00 every ~30 min`, 24h. Re-confirm those two
+   headways and the cutoffs against https://flyer.bristolairport.co.uk/ and the Bristol
+   Airport "Flyer to increase services" news posts; also spot-check the Airport→Temple
+   Meads ride (`rideTM`, ~25 min) and stop list. If the bands change, edit `bands[]` and
+   the human-readable `freq`/`dur` strings together. The in-app "just landed?" helper and
+   the frequency table both read from `bands[]`, so no other edit is needed.
 9. **UK rail Cheltenham⇄Bristol/Birmingham** (`trains`) — validTo is the next UK timetable change (Dec/May/Jun). Re-pull near that date.
 
 Only touch a source that is within 14 days of `validTo`, already expired, flagged
