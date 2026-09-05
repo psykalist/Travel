@@ -3,6 +3,18 @@
 All notable changes to the Palafrugell ↔ Cheltenham Spa journey planner.
 Versions are also shown in-app (header badge + footer "Version history").
 
+## [3.20] — 2026-09-05
+- Made the A1 Flyer "just landed" helper properly interactive. It now takes your
+  landing time plus a slider for how long customs & bags took, and updates live
+  as you drag: when you're through, your likely Temple Meads arrival, and the
+  earliest Cheltenham train you make — so clearing customs in 20 min instead of
+  45 visibly catches an earlier train.
+- Trains are tagged "comfortable" or "tight" (with a safe-bet fallback) so a
+  close connection is honest, using a realistic half-headway bus wait rather
+  than always assuming the worst-case gap.
+- The stops list and the longer explanation moved into an ℹ popup, keeping the
+  panel focused on the interactive bus/train result.
+
 ## [3.19] — 2026-09-05
 - Bristol Airport Flyer (A1) now has its own panel with the real frequency
   cutoffs instead of vague "more often in the daytime" wording: every ~8 min

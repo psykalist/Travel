@@ -261,6 +261,20 @@ footer { margin-top:26px; font-size:11.5px; color:#8a93a0; border-top:1px solid 
 .flyout b { color:#0d5c38; }
 .flytrain { display:inline-block; background:#e7f3ea; border:1px solid #bfe0cb; border-radius:6px; padding:3px 9px; margin:5px 6px 0 0; font-size:13px; font-variant-numeric:tabular-nums; font-weight:700; color:#0d5c38; }
 .flynote { font-size:11.5px; color:#667; margin-top:8px; line-height:1.45; }
+.flynote a { color:#1a53d0; text-decoration:none; font-weight:600; }
+.flyland-row { display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end; margin-bottom:6px; }
+.flyfield { display:flex; flex-direction:column; }
+.flyfield.grow { flex:1 1 220px; min-width:200px; }
+.flyfield label { font-size:11.5px; font-weight:700; color:#556; margin-bottom:6px; }
+.flycustval { color:#0d5c38; }
+.flyslider { width:100%; accent-color:#0d7a4f; height:26px; }
+.flycatch { display:inline-block; background:#0d7a4f; color:#fff; border-radius:9px; padding:6px 14px; font-size:18px; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:.01em; }
+.flyafter { color:#667; font-size:12.5px; font-variant-numeric:tabular-nums; }
+.flytag { font-size:11.5px; font-weight:700; border-radius:6px; padding:2px 8px; margin-left:6px; white-space:normal; }
+.flytag.ok { background:#e3f5ea; color:#0d7a4f; }
+.flytag.tight { background:#fbf1dd; color:#9a6a00; }
+.flyinfo-btn { background:#eef4ff; border:1px solid #d3e0f7; color:#1a53d0; border-radius:8px; padding:4px 10px; font-size:12px; font-weight:700; cursor:pointer; margin-left:2px; }
+.flyinfo-btn:hover { background:#e2ecfd; }
 /* admin */
 .adwrap { background:#f4f8ff; border:1px solid #d3e0f7; border-radius:14px; padding:4px 16px; margin:18px 0; box-shadow:0 2px 10px rgba(26,83,208,.05); }
 .adwrap summary { cursor:pointer; font-weight:700; font-size:14px; color:#334; padding:10px 0; }
@@ -1282,7 +1296,7 @@ function renderTrains(){
   </details>`;
 }
 
-// ---- Bristol Airport Flyer (A1): frequency bands + "just landed" helper ----
+// ---- Bristol Airport Flyer (A1): frequency bands + interactive "just landed" helper ----
 // Which frequency band a clock-minute falls in (overnight band wraps past midnight).
 function flyHeadway(min){
   const b=DATA.bristol.flyer.bands; const m=((min%1440)+1440)%1440;
@@ -1290,29 +1304,59 @@ function flyHeadway(min){
   const mm=m+1440; for(const x of b){ if(mm>=x.from && mm<x.to) return x; }
   return b[b.length-1];
 }
-// Recompute the "just landed" result from the time input (or now).
+function fShort(m){ return fromMin(m).replace(/ \+\d+d/,''); }   // HH:MM, drop the +Nd wrap tag
+// Recompute from landing time + how long customs/bags took. Fires live on every slider/time move.
 function flyerCalc(){
   const f=DATA.bristol.flyer; const el=document.getElementById('flyresult'); if(!el) return;
-  const inp=document.getElementById('flytime');
-  const v=inp&&inp.value?inp.value:null;
-  const t = v!=null ? toMin(v) : (()=>{const d=new Date(); return d.getHours()*60+d.getMinutes();})();
-  const band=flyHeadway(t);
-  const arrBest  = t + 2 + f.rideTM;                 // next bus almost here
-  const arrWorst = t + band.head + f.rideTM;         // just missed one — full headway wait
-  const cut = arrWorst + 8;                          // 8 min to change at Temple Meads
-  const trains=(DATA.trainTimes.bristol.toPal||[]).map(toMin).filter(x=>x!=null).sort((a,b)=>a-b);
-  const next=trains.filter(x=>x>=cut).slice(0,3);
-  let html = `<div class="flyout">Buses are running <b>every ~${band.head} min</b> now (${band.label.toLowerCase()}), so expect to board within ~${band.head} min. `
-    + `Reach <b>Temple Meads by ~${fromMin(arrBest).replace(/ \+\d+d/,'')}–${fromMin(arrWorst)}</b> (≈${f.rideTM} min ride).</div>`;
-  if(next.length){
-    html += `<div class="flyout" style="margin-top:9px">Cheltenham trains you could then catch (Mon–Fri):<br>`
-      + next.map(x=>`<span class="flytrain">${fromMin(x)}</span>`).join('') + `</div>`
-      + `<div class="flynote">Train ~40 min (CrossCountry) or ~1h05 (GWR); 8 min allowed to change at Temple Meads. Clearing the airport faster shifts this whole window earlier — change the time above to check for an earlier bus/train.</div>`;
+  const landInp=document.getElementById('flyland'), custInp=document.getElementById('flycustoms');
+  const landV = landInp&&landInp.value ? landInp.value : null;
+  const land = landV!=null ? toMin(landV) : (()=>{const d=new Date(); return d.getHours()*60+d.getMinutes();})();
+  const cust = custInp ? (+custInp.value) : 45;
+  const lbl=document.getElementById('flycustval'); if(lbl) lbl.textContent = cust+' min';
+  const clear  = land + cust;                       // through customs at this clock time
+  const band   = flyHeadway(clear);
+  const wAvg   = Math.ceil(band.head/2);             // typical turn-up-and-go wait (half the gap)
+  const tmTyp  = clear + wAvg + f.rideTM;            // likely Temple Meads arrival
+  const tmWorst= clear + band.head + f.rideTM;       // if you just miss a bus
+  const XCH=8;                                       // minutes to change onto the train
+  const trains = (DATA.trainTimes.bristol.toPal||[]).map(toMin).filter(x=>x!=null).sort((a,b)=>a-b);
+  const caught = trains.find(x=>x>=tmTyp+XCH);       // earliest train on the likely arrival
+  const safe   = trains.find(x=>x>=tmWorst+XCH);     // the one you'd still make if the bus is slow
+  const tight  = caught!=null && safe!=null && caught<safe;   // caught only if the bus comes soon
+  const after  = caught!=null ? trains.filter(x=>x>caught).slice(0,2) : [];
+  let html = `<div class="flyout">Through customs ~<b>${fShort(clear)}</b> · A1 is turn-up-and-go <b>every ~${band.head} min</b> now, `
+    + `so into <b>Temple Meads ~${fShort(tmTyp)}</b> (allow to ~${fShort(tmWorst)} if you just miss a bus).</div>`;
+  if(caught!=null){
+    html += `<div class="flyout" style="margin-top:10px">Earliest Cheltenham train you make (Mon–Fri):</div>`
+      + `<div style="margin-top:5px"><span class="flycatch">${fShort(caught)}</span>`
+      + (tight?` <span class="flytag tight">tight — needs a bus within ~${wAvg} min${safe!=null?`; safe bet ${fShort(safe)}`:''}</span>`
+              :` <span class="flytag ok">comfortable</span>`)
+      + (after.length?`<div class="flyafter" style="margin-top:5px">then ${after.map(fShort).join(', ')}</div>`:``) + `</div>`
+      + `<div class="flynote">Drag the slider — a quicker customs queue moves this chain earlier and can catch an earlier train. <a href="#" onclick="openFlyerInfo();return false;">How this is worked out ›</a></div>`;
   } else {
-    html += `<div class="flyout" style="margin-top:9px">No Cheltenham train catchable after that — last departs <b>${fromMin(trains[trains.length-1])}</b>; first next morning <b>${fromMin(trains[0])}</b>.</div>`
-      + `<div class="flynote">The A1 itself still runs (every ~30 min overnight), so you can still reach Temple Meads — you'd just wait for the first morning train.</div>`;
+    html += `<div class="flyout" style="margin-top:10px">No Cheltenham train catchable after that tonight — last departs <b>${fShort(trains[trains.length-1])}</b>; first next morning <b>${fShort(trains[0])}</b>. The A1 still runs (~30 min overnight) so you can reach Temple Meads and wait for the first train.</div>`
+      + `<div class="flynote"><a href="#" onclick="openFlyerInfo();return false;">How this is worked out ›</a></div>`;
   }
   el.innerHTML=html;
+}
+// Wordy detail + stops live in a popup so the panel stays interactive.
+function openFlyerInfo(){
+  const f=DATA.bristol.flyer;
+  const stopChips=arr=>arr.map((s,i)=>`<span class="flystop"><span class="n">${i+1}</span>${s}</span>`).join('');
+  document.getElementById('tlpanel').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+      <h3 style="margin:2px 0 10px;font-size:17px">🚌 Bristol Airport Flyer (A1) — the detail</h3>
+      <button class="tlclose" onclick="closeTimeline()" aria-label="Close">×</button>
+    </div>
+    <div style="font-size:13.5px;color:#243;line-height:1.55">
+      <p>Runs <b>24 hours, 7 days a week</b>, turn-up-and-go — no fixed departure list, so you just take the next one. Frequency: <b>every ~8 min 07:00–19:00</b>, then <b>every ~30 min 19:00–07:00</b>.</p>
+      <p><b>Airport → Temple Meads</b> is ~${f.rideTM} min (${f.stopsTM.length} stops); it carries on to the city centre / Bus Station (~${f.rideCity} min). Fare ${f.fare}; a First ticket also covers onward First buses in the Bristol zone.</p>
+      <div style="margin:8px 0 10px"><div class="btlabel">Stops · Airport → city (Temple Meads is stop ${f.stopsTM.length}):</div><div class="flystops">${stopChips(f.stopsCity)}</div></div>
+      <p>The <b>“just landed” helper</b> takes your landing time plus how long customs &amp; bags took, then assumes a typical wait of about <b>half a frequency gap</b> for the turn-up-and-go bus, a ~${f.rideTM}-min ride, and <b>8 min to change</b> onto the train at Temple Meads. A train you’d only make if a bus turns up quickly is flagged <b>“tight”</b>, with the later <b>safe-bet</b> train shown alongside. The Cheltenham trains are the real <b>Mon–Fri</b> Bristol→Cheltenham times (CrossCountry ~40 min, GWR ~1h05); Sat/Sun run lighter, so check live then.</p>
+      <p style="color:#667">Frequency verified 5 Sep 2026 from Bristol Airport. Always confirm live before travelling.</p>
+      <a class="btsrc" href="${f.src}" target="_blank" rel="noopener">official flyer timetable ↗</a>
+    </div>`;
+  document.getElementById('tlmodal').classList.add('open');
 }
 // ---- Bristol Airport Flyer (A1) panel ----
 function renderFlyer(){
@@ -1322,23 +1366,23 @@ function renderFlyer(){
     const to=b.to>=1440?b.to-1440:b.to;
     return `<tr><td>${fromMin(b.from)}–${fromMin(to)}</td><td class="hw">every ~${b.head} min</td><td>${b.label}</td></tr>`;
   }).join('');
-  const stopChips=arr=>arr.map((s,i)=>`<span class="flystop"><span class="n">${i+1}</span>${s}</span>`).join('');
   const d=new Date(); const nowV=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
   host.innerHTML = `<details class="btwrap" open><summary>🚌 Bristol Airport Flyer (A1) — frequency &amp; “just landed” helper</summary>
     <div class="btblock">
       <div class="btlabel"><b>How often it runs — the actual cutoffs, 7 days a week:</b></div>
       <table class="flyband"><thead><tr><th>Time of day</th><th>Frequency</th><th></th></tr></thead>
         <tbody>${bandRows}</tbody></table>
-      <div class="flynote" style="color:#455">Runs <b>24 hours</b>, turn-up-and-go — no fixed departures to catch. <b>Airport → Temple Meads ~${f.rideTM} min</b> (${f.stopsTM.length} stops); on to the city centre / Bus Station ~${f.rideCity} min. Fare ${f.fare}.</div>
-    </div>
-    <div class="btblock">
-      <div class="btlabel">Stops · Airport → city (Temple Meads is stop ${f.stopsTM.length}):</div>
-      <div class="flystops">${stopChips(f.stopsCity)}</div>
+      <div class="flynote" style="color:#455">Runs <b>24 hours</b>, turn-up-and-go. <b>Airport → Temple Meads ~${f.rideTM} min</b> (${f.stopsTM.length} stops). <button type="button" class="flyinfo-btn" onclick="openFlyerInfo()">ℹ Stops &amp; detail</button></div>
     </div>
     <div class="btblock">
       <div class="flycalc">
-        <label for="flytime">Just landed? Through customs by (Bristol time):</label>
-        <input type="time" id="flytime" value="${nowV}" oninput="flyerCalc()">
+        <div class="btlabel" style="font-size:13.5px;color:#243;margin-bottom:9px"><b>Just landed at Bristol?</b> See which bus is due and the earliest train home.</div>
+        <div class="flyland-row">
+          <div class="flyfield"><label for="flyland">Landed (Bristol time)</label>
+            <input type="time" id="flyland" value="${nowV}" oninput="flyerCalc()" onchange="flyerCalc()"></div>
+          <div class="flyfield grow"><label for="flycustoms">Customs &amp; bags took: <span id="flycustval" class="flycustval">45 min</span></label>
+            <input type="range" id="flycustoms" class="flyslider" min="10" max="120" step="5" value="45" oninput="flyerCalc()" onchange="flyerCalc()"></div>
+        </div>
         <div id="flyresult"></div>
       </div>
     </div>
@@ -1519,8 +1563,9 @@ function renderAdmin(){
 }
 
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "3.19";
+const VERSION = "3.20";
 const CHANGELOG = [
+  ["3.20","2026-09-05","Made the A1 Flyer ‘just landed’ helper properly interactive. It now takes your landing time plus a slider for how long customs & bags took, and updates live as you drag: it shows when you’re through, your likely Temple Meads arrival, and the earliest Cheltenham train you make — so clearing customs in 20 min instead of 45 visibly catches an earlier train. Trains are tagged ‘comfortable’ or ‘tight’ (with the safe-bet fallback) so a close connection is honest, using a realistic half-headway bus wait instead of always assuming the worst. The stops list and the wordy explanation now live in an ℹ popup, keeping the panel focused on the interactive bus/train result."],
   ["3.19","2026-09-05","Bristol Airport Flyer (A1) now has its own panel with the real frequency cutoffs instead of vague ‘more often in the daytime’ wording: every ~8 min from 07:00–19:00, then every ~30 min from 19:00–07:00, running 24 hours, 7 days (source: Bristol Airport). It lists the stops (Airport → Parson Street → Bedminster → Temple Meads, 4 stops; on to City Centre / Bus Station) and the ~25 min ride to Temple Meads. Added a ‘just landed?’ helper: enter the time you clear customs and it shows how soon the next bus leaves, when you’d reach Temple Meads, and which Cheltenham trains you could then catch — so a fast passport queue instantly shows whether an earlier train is in reach."],
   ["3.18","2026-09-02","Refresh: Girona-Birmingham now shows Sun/Tue/Thu/Fri each way (FR4415 out, FR4414 home) - it was hiding every Thursday flight; and Palafrugell to Girona switched to the winter Moventis E3 sheet (Sep 2026-Jun 2027) with the Mon-Fri departure times. Return and weekend times still to be confirmed."],
   ["3.17","2026-08-28","Self-maintaining refresh is now live. A monthly cloud task re-verifies every timetable against the official sites, runs the built-in self-check, and pushes any update to GitHub on its own — your phone updates on next open, and it only messages Kieran when something changed or couldn’t be confirmed (procedure in REFRESH_PLAYBOOK.md). Standing rule from here on: EVERY change to this app, automated or manual, is recorded in this changelog."],
