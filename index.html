@@ -433,32 +433,38 @@ tr.ad-expired td { background:#fef7f7; }
 // against the official sites, rewrites the affected values, and bumps lastUpdated + LAST_VERIFIED.
 // ============================================================================
 const DATA = {
-  lastUpdated: "2026-09-05",
+  lastUpdated: "2026-11-17",
   eurToGbp: 0.85,                       // approx; refreshed weekly
 
   buses: {
-    pgl_gro: { freq:"Hourly", first:"~05:00", last:"~22:00", dur:"1h00–1h10", fare:"€8–12",
-               note:"Moventis (Sarfa) towards Girona; some summer services run direct to Girona Airport." },
-    pgl_bcn: { freq:"~18–24/day", first:"04:15", last:"23:25", dur:"2h10–2h20", fare:"€22–30",
-               note:"Moventis (Sarfa) direct coach Palafrugell → Barcelona Airport (T2, then T1)." }
+    pgl_gro: { freq:"~Hourly Mon–Fri (12/day) · 6/day weekends", first:"06:15", last:"18:15", dur:"~1h25", fare:"€8–12",
+               note:"Moventis E3 (Sarfa) Palafrugell → Palamós → Platja d'Aro → Girona bus station (winter sheet Sep 2026–Jun 2027). Change at Girona for the 607 airport bus." },
+    pgl_bcn: { freq:"6/day to the airport (winter)", first:"06:10", last:"15:40", dur:"~2h55 to T1 (+10 min T2)", fare:"€22–30",
+               note:"Moventis line 1 direct coach Palafrugell → Barcelona Nord → Airport T1, then T2. Winter sheet 1 Nov 2026–2 Jan 2027." }
   },
   // known scheduled departure times let us tag daytime vs early/late; prices always via live link
   flights: {
-    gro_brs: { carrier:"Ryanair", season:"Apr–Oct (summer only)", days:"Mon, Wed, Sat, Sun", dur:"~2h00", fare:"£30–110", depOut:"varies (eve Mon/Sat, morn Wed/Sun)", depHome:"varies" },
-    gro_bhx: { carrier:"Ryanair", season:"Seasonal", days:"Sun, Tue, Thu & Fri", dur:"~2h05", fare:"£30–110", depOut:"", depHome:"" },
-    bcn_brs: { carrier:"easyJet / Ryanair", season:"Year-round", days:"Most days", dur:"~2h00", fare:"£35–130", depOut:"", depHome:"" },
-    bcn_bhx: { carrier:"Jet2 / Ryanair / easyJet / Vueling", season:"Year-round", days:"Daily", dur:"~2h15", fare:"£40–150", depOut:"11:30", depHome:"07:30" }
+    gro_brs: { carrier:"Ryanair / Jet2", season:"Summer only (late Mar–Oct) — no winter flights", days:"Mon, Wed, Sat, Sun (summer)", dur:"~2h00", fare:"£30–110", depOut:"summer only", depHome:"summer only" },
+    gro_bhx: { carrier:"Ryanair / Jet2", season:"Summer only (late Mar–Oct) — no winter flights", days:"Sun, Tue, Thu & Fri (summer)", dur:"~2h05", fare:"£30–110", depOut:"summer only", depHome:"summer only" },
+    bcn_brs: { carrier:"easyJet / Ryanair", season:"Year-round", days:"Daily (easyJet); Ryanair Mon & Sat in winter", dur:"~2h25", fare:"£35–130", depOut:"~10:35–11:40, or evening ~19:30–22:00", depHome:"~07:10, or ~15:40–18:05" },
+    bcn_bhx: { carrier:"Ryanair / easyJet / Vueling / Jet2", season:"Year-round", days:"Daily (Ryanair)", dur:"~1h25", fare:"£40–150", depOut:"~10:30–11:00", depHome:"~13:20" }
   },
   bristol: {
     flyer: { name:"Airport Flyer A1",
-             freq:"~8 min · 07:00–19:00, then ~30 min · 19:00–07:00 (runs 24h)",
-             dur:"~25 min to Temple Meads (30–40 to the centre)", fare:"£9.50",
+             freq:"~every 7–8 min 07:00–18:00 · ~10–15 min early morning & 18:00–20:00 · ~20 min 20:00–00:00 · ~30 min overnight (runs 24h)",
+             dur:"~20–26 min to Temple Meads (30–40 to the centre)", fare:"£9.50",
              runs24:true, rideTM:25, rideCity:37, taxiTM:22,   // taxiTM = ~min Airport→Temple Meads by cab (~£40)
-             // headway bands in minutes-from-midnight; overnight band wraps past midnight (1140→1860 = 19:00→07:00 next day)
-             bands:[ {from:420, to:1140, head:8,  label:"Daytime"},
-                     {from:1140,to:1860, head:30, label:"Evening & overnight"} ],
-             stopsTM:["Bristol Airport","Parson Street","Bedminster","Temple Meads Station"],
-             stopsCity:["Bristol Airport","Parson Street","Bedminster","Temple Meads Station","Bristol City Centre","Bristol Bus Station"],
+             // headway bands (Airport → city, Mon–Fri) in minutes-from-midnight, from the published timetable (valid from 6 Apr 2025).
+             // A band may run past 1440 (midnight); minutes after midnight not covered fall into it via the +1440 wrap.
+             bands:[ {from:5,   to:265,  head:30, label:"Overnight"},
+                     {from:265, to:385,  head:15, label:"Early morning"},
+                     {from:385, to:425,  head:10, label:"Morning build-up"},
+                     {from:425, to:1080, head:8,  label:"Daytime"},
+                     {from:1080,to:1140, head:10, label:"Early evening"},
+                     {from:1140,to:1205, head:15, label:"Evening"},
+                     {from:1205,to:1445, head:20, label:"Late evening"} ],
+             stopsTM:["Bristol Airport","West Street (Chessel St)","Bedminster Parade","Temple Meads Station"],
+             stopsCity:["Bristol Airport","West Street (Chessel St)","Bedminster Parade","Temple Meads Station","Bristol Bus Station"],
              src:"https://flyer.bristolairport.co.uk/timetables" },
     train: { op:"CrossCountry / GWR", freq:"~2–3/hr (every 20–30 min)", dur:"40–65 min", last:"22:18", fare:"£4–17" }
   },
@@ -472,75 +478,79 @@ const DATA = {
   // Optional from/to (YYYY-MM-DD, inclusive) bound a row to a season; the app only shows a flight on dates it
   // actually operates (see fliesOn). A row with no from/to runs all year. Use summer/winter rows to model schedule changes.
   sched: {
+    // GIRONA — summer-only routes. Nothing flies Nov–Mar (FlightsFrom/FlightMapper, checked 17 Nov 2026).
+    // Rows are bounded to summer 2027 using the summer-2026 pattern; RE-VERIFY days/times for summer 2027 by end Feb 2027.
     gro_brs: {
-      su: [{carrier:"Ryanair", no:"FR9335", days:[0,1,3,6], daysText:"Mon, Wed, Sat, Sun", dep:"18:35", arr:"20:16", season:"Apr–Oct", approx:true, note:"operates Mon/Wed/Sat/Sun — times swing by day: Mon ~18:35, Wed ~09:30, Sat ~22:20, Sun ~09:20; confirm on Ryanair"}],
-      us: [{carrier:"Ryanair", no:"FR9336", days:[0,1,3,6], daysText:"Mon, Wed, Sat, Sun", dep:"15:10", arr:"18:00", season:"Apr–Oct", approx:true, note:"operates Mon/Wed/Sat/Sun — Mon ~15:10, Wed ~05:55, Sat ~18:55, Sun ~05:55; confirm on Ryanair"}]
+      su: [{carrier:"Ryanair", no:"FR9335", days:[0,1,3,6], daysText:"Mon, Wed, Sat, Sun", dep:"18:30", arr:"19:40", season:"Summer 2027 (provisional)", approx:true, from:"2027-03-28", to:"2027-10-30", note:"summer-2026 pattern — Mon ~18:30, Wed ~09:30, Sat ~22:20, Sun ~09:20; summer 2027 not yet confirmed"},
+           {carrier:"Jet2", no:"LS1830", days:[6], daysText:"Sat", dep:"09:40", arr:"10:45", season:"Summer 2027 (provisional)", approx:true, from:"2027-05-15", to:"2027-10-30", note:"Jet2 returns mid-May 2027 (Sat)"}],
+      us: [{carrier:"Ryanair", no:"FR9336", days:[0,1,3,6], daysText:"Mon, Wed, Sat, Sun", dep:"15:10", arr:"18:00", season:"Summer 2027 (provisional)", approx:true, from:"2027-03-28", to:"2027-10-30", note:"summer-2026 pattern — Mon ~15:10, Wed ~05:55, Sat ~18:55, Sun ~05:55; summer 2027 not yet confirmed"}]
     },
     gro_bhx: {
-      su: [{carrier:"Ryanair", no:"FR4415", days:[0,2,4,5], daysText:"Sun, Tue, Thu, Fri", dep:"17:50", arr:"18:55", season:"Sun, Tue, Thu & Fri", approx:true, note:"operates Sun/Tue/Thu/Fri; confirm exact time on Ryanair"}],
-      us: [{carrier:"Ryanair", no:"FR4414", days:[0,2,4,5], daysText:"Sun, Tue, Thu, Fri", dep:"14:15", arr:"17:10", season:"Sun, Tue, Thu & Fri", approx:true, note:"operates Sun/Tue/Thu/Fri; confirm exact time on Ryanair"}]
+      su: [{carrier:"Ryanair", no:"FR4415", days:[0,2,4,5], daysText:"Sun, Tue, Thu, Fri", dep:"17:50", arr:"18:55", season:"Summer 2027 (provisional)", approx:true, from:"2027-03-28", to:"2027-10-30", note:"summer-2026 pattern; summer 2027 days/times not yet confirmed"}],
+      us: [{carrier:"Ryanair", no:"FR4414", days:[0,2,4,5], daysText:"Sun, Tue, Thu, Fri", dep:"14:15", arr:"17:10", season:"Summer 2027 (provisional)", approx:true, from:"2027-03-28", to:"2027-10-30", note:"summer-2026 pattern; summer 2027 days/times not yet confirmed"}]
     },
+    // BARCELONA ⇄ BRISTOL — WINTER 2026/27 (FlightsFrom week data for 22 Nov, 6 & 13 Dec, 17 Jan, 14 Feb, 14 Mar; checked 17 Nov 2026)
     bcn_brs: {
       su: [
-        {carrier:"easyJet", no:"", days:[0,1,2,3,4,5,6], dep:"10:50", arr:"12:15", season:"Year-round", approx:true, note:"2/day; also an evening departure — times vary seasonally"},
-        {carrier:"Ryanair", no:"", days:[0,1,2,3,4,5,6], dep:"", arr:"", season:"Year-round", approx:true, note:"1–2/day; times vary"}
+        {carrier:"easyJet", no:"U22704", days:[1,2,4,5,6], daysText:"Mon, Tue, Thu, Fri, Sat", dep:"10:50", arr:"12:15", season:"Winter", approx:true, from:"2026-10-25", to:"2027-03-27", note:"late morning — Mon ~10:35, Tue ~11:40 (most weeks), Thu ~11:15, Fri ~10:50, Sat ~11:05; also Sun ~10:20 from mid-Dec"},
+        {carrier:"easyJet", no:"U22706", days:[0,3,5], daysText:"Sun, Wed, Fri", dep:"20:55", arr:"22:20", season:"Winter", approx:true, from:"2026-10-25", to:"2027-03-27", note:"evening — Sun ~21:55, Wed ~19:30, Fri ~20:55; some weeks also Mon ~19:10 / Thu ~21:45"},
+        {carrier:"Ryanair", no:"FR3160", days:[1,6], daysText:"Mon, Sat", dep:"11:00", arr:"12:25", season:"Winter", approx:true, from:"2026-10-25", to:"2027-03-27", note:"Mon ~11:00, Sat ~09:55; occasional extra Tue ~17:25 / Fri ~10:15"}
       ],
       us: [
-        // SUMMER schedule (to 24 Oct 2026)
-        {carrier:"easyJet", no:"U27192", days:[0,1,2,3,4,5,6], dep:"10:05", arr:"13:10", season:"Summer", approx:true, to:"2026-10-24", note:"summer schedule"},
-        {carrier:"Ryanair", no:"FR3161", days:[0,1,2,3,4,5,6], dep:"12:40", arr:"15:45", season:"Summer", approx:true, to:"2026-10-24", note:"summer schedule"},
-        {carrier:"easyJet", no:"U22703", days:[0,1,2,3,4,5,6], dep:"18:20", arr:"21:25", season:"Summer", approx:true, to:"2026-10-24", note:"summer schedule"},
-        // WINTER schedule (from 25 Oct 2026)
-        {carrier:"easyJet", no:"U22703", days:[0,1,2,3,4,5,6], dep:"07:25", arr:"10:30", season:"Winter", approx:true, from:"2026-10-25", note:"winter — early/relaxed flight (before 08:00)"},
-        {carrier:"Ryanair", no:"FR3161", days:[0,1,2,3,4,5,6], dep:"17:30", arr:"20:35", season:"Winter", approx:true, from:"2026-10-25", note:"winter schedule"},
-        {carrier:"easyJet", no:"U22705", days:[0,1,2,3,4,5,6], dep:"17:55", arr:"21:00", season:"Winter", approx:true, from:"2026-10-25", note:"winter schedule"}
+        {carrier:"easyJet", no:"U22703", days:[1,2,4,5,6], daysText:"Mon, Tue, Thu, Fri, Sat", dep:"07:10", arr:"10:15", season:"Winter", approx:true, from:"2026-10-25", to:"2027-03-27", note:"early — Mon ~06:45, Tue ~07:50 (most weeks), Thu ~07:25, Fri ~07:10, Sat ~07:15; also Sun ~06:35 from mid-Dec"},
+        {carrier:"easyJet", no:"U22705", days:[0,3,5], daysText:"Sun, Wed, Fri", dep:"17:15", arr:"20:20", season:"Winter", approx:true, from:"2026-10-25", to:"2027-03-27", note:"afternoon/evening — Sun ~18:05, Wed ~15:40, Fri ~17:15; some weeks also Thu ~17:55 / Sat ~15:35"},
+        {carrier:"Ryanair", no:"FR3161", days:[1,6], daysText:"Mon, Sat", dep:"07:15", arr:"10:25", season:"Winter", approx:true, from:"2026-10-25", to:"2027-03-27", note:"Mon ~07:15, Sat ~06:10; occasional extra Tue ~13:40 / Fri ~06:30"}
       ]
     },
+    // BARCELONA ⇄ BIRMINGHAM — WINTER 2026/27 (same FlightsFrom sampling). Jet2 pauses 23 Nov 2026 → ~10 Feb 2027.
     bcn_bhx: {
       su: [
-        {carrier:"Jet2", no:"LS1338", days:[0,1,4,5], dep:"11:30", arr:"13:00", season:"Summer sched — to ~24 Oct", approx:true, note:"Fri departs later ~16:35"},
-        {carrier:"Vueling", no:"VY8754", days:[1,2,3,5], dep:"10:05", arr:"11:35", season:"Summer sched — to ~24 Oct", approx:true, note:"Thu ~12:15, Sat ~15:10, Sun ~08:00"},
-        {carrier:"easyJet", no:"U26620", days:[1,3,5], dep:"10:50", arr:"12:20", season:"Summer sched — to ~24 Oct", approx:true, note:"Wed & Fri often run late ~22:00 instead"},
-        {carrier:"Ryanair", no:"FR3792", days:[1,2,3,4,5,6], dep:"11:10", arr:"12:40", season:"Summer sched — to ~24 Oct", approx:true, note:"1–2/day; times swing 08:10–22:10 — check the app"}
+        {carrier:"Ryanair", no:"FR3800", days:[0,1,2,3,4,5], daysText:"Sun, Mon, Tue, Wed, Thu, Fri", dep:"10:30", arr:"11:55", season:"Winter", approx:true, from:"2026-10-25", to:"2027-03-27", note:"late morning — Sun ~12:00, Mon ~10:10, Tue ~10:25, Wed ~11:40, Thu ~10:30, Fri ~11:00"},
+        {carrier:"Ryanair", no:"FR3792", days:[0,1,2,4,5,6], daysText:"Sun, Mon, Tue, Thu, Fri, Sat", dep:"17:05", arr:"18:30", season:"Winter", approx:true, from:"2026-10-25", to:"2027-03-27", note:"later flight — Sun ~21:25, Mon ~16:10, Tue ~17:20, Thu ~15:05, Fri ~21:05, Sat ~17:05"},
+        {carrier:"easyJet", no:"U27197", days:[0,1,5], daysText:"Sun, Mon, Fri", dep:"10:55", arr:"12:25", season:"Winter", approx:true, from:"2026-10-25", to:"2027-03-27", note:"Mon ~10:55, Fri ~10:05, Sun ~13:00; some weeks Thu ~16:50"},
+        {carrier:"Vueling", no:"VY7750", days:[1,5], daysText:"Mon, Fri", dep:"11:25", arr:"12:50", season:"Winter", approx:true, from:"2026-10-25", to:"2027-03-27", note:"Mon ~11:25, Fri ~10:45"},
+        {carrier:"Jet2", no:"LS1338", days:[0,4], daysText:"Sun, Thu", dep:"11:30", arr:"13:00", season:"Winter", approx:true, from:"2026-10-25", to:"2026-11-22", note:"last flights before the winter pause — Thu ~11:30, Sun ~19:55"},
+        {carrier:"Jet2", no:"LS1338", days:[0,4], daysText:"Sun, Thu", dep:"11:30", arr:"13:00", season:"Winter (resumes Feb)", approx:true, from:"2027-02-11", to:"2027-03-27", note:"resumes ~11 Feb 2027 — Thu ~11:30, Sun ~19:55"}
       ],
       us: [
-        {carrier:"Jet2", no:"LS1337", days:[0,1,4,5], dep:"07:00", arr:"10:20", season:"Summer sched — to ~24 Oct", approx:true, note:"Mon ~07:30, Fri departs later ~12:35"},
-        {carrier:"Vueling", no:"VY8755", days:[1,2,3,5], dep:"12:10", arr:"15:30", season:"Summer sched — to ~24 Oct", approx:true, note:"Thu ~14:25, Sat ~17:25, Sun ~10:05"},
-        {carrier:"easyJet", no:"U26619", days:[1,3,5], dep:"07:00", arr:"10:20", season:"Summer sched — to ~24 Oct", approx:true, note:"Wed & Fri often run late ~18:00 instead"},
-        {carrier:"Ryanair", no:"", days:[1,2,3,4,5,6], dep:"12:20", arr:"15:40", season:"Summer sched — to ~24 Oct", approx:true, note:"Airport-LOCAL dep as shown on ryanair.com (BHX time). Confirmed ~12:20 for late-Jan. 1–2/day; times swing 07:00–22:00 — check the app. Flight no. varies; confirm on Ryanair."}
+        {carrier:"Ryanair", no:"FR3801", days:[0,1,2,4,6], daysText:"Sun, Mon, Tue, Thu, Sat", dep:"13:20", arr:"16:30", season:"Winter", approx:true, from:"2026-10-25", to:"2027-03-27", note:"midday — Sun ~13:50, Mon ~12:25, Tue ~13:35, Thu ~12:20, Sat ~13:20 (BHX local)"},
+        {carrier:"Ryanair", no:"FR3793", days:[3,5], daysText:"Wed, Fri", dep:"07:15", arr:"10:25", season:"Winter", approx:true, from:"2026-10-25", to:"2027-03-27", note:"early — Wed ~07:55, Fri ~07:15; some weeks Mon ~06:25 / Tue ~06:40"},
+        {carrier:"Ryanair", no:"FR3793", days:[0,4,5], daysText:"Sun, Thu, Fri", dep:"17:20", arr:"20:30", season:"Winter", approx:true, from:"2026-10-25", to:"2027-03-27", note:"evening — Sun ~17:40, Thu ~16:55, Fri ~17:20"},
+        {carrier:"easyJet", no:"U27198", days:[0,1,5], daysText:"Sun, Mon, Fri", dep:"12:55", arr:"16:05", season:"Winter", approx:true, from:"2026-10-25", to:"2027-03-27", note:"Mon ~12:55, Sun ~15:05, Fri early ~06:15; some weeks Thu ~19:00"},
+        {carrier:"Vueling", no:"VY7751", days:[1,5], daysText:"Mon, Fri", dep:"13:35", arr:"16:55", season:"Winter", approx:true, from:"2026-10-25", to:"2027-03-27", note:"Mon ~13:35, Fri ~12:50"},
+        {carrier:"Jet2", no:"LS1337", days:[0,4], daysText:"Sun, Thu", dep:"07:30", arr:"10:45", season:"Winter", approx:true, from:"2026-10-25", to:"2026-11-22", note:"last flights before the winter pause — Thu ~07:30, Sun ~15:45"},
+        {carrier:"Jet2", no:"LS1337", days:[0,4], daysText:"Sun, Thu", dep:"07:30", arr:"10:45", season:"Winter (resumes Feb)", approx:true, from:"2027-02-11", to:"2027-03-27", note:"resumes ~11 Feb 2027 — Thu ~07:30, Sun ~15:45"}
       ]
     }
   },
-
   // BUS TIMETABLES (static, change after holiday season — refreshed with the flights)
   busTimes: {
-    season: "Times below are the WINTER baseline (Sep–Jun, Mon–Fri). We're currently in the SUMMER season (Jul–Aug 2026) — the current summer sheet is linked per line; exact summer departures differ.",
+    season: "WINTER timetables, re-checked 17 Nov 2026 against the operators' current sheets: Moventis E3 (Sep 2026–Jun 2027), Sagalés 607 (1 Nov 2026–31 Mar 2027), Moventis line 1 (1 Nov 2026–2 Jan 2027). Times shown are Mon–Fri; weekend differences are in each line's note.",
     gro: {
-      label: "Leg 1 · Palafrugell ⇄ Girona city bus station · Moventis (Sarfa) lines 5/41/42 via Palamós/Platja d'Aro (~1h00–1h40). There is NO direct airport coach — change at Girona for the 607 (see below).",
-      mins: 75,   // Moventis 5/41/42 typical run ~1h00–1h40; used to estimate arrivals (~)
-      toDest: ["06:15","07:15","07:30","08:15","10:15","11:15","13:15","14:15","15:15","16:15","17:15","18:15","20:15"],
-      toPal:  ["08:00","08:15","09:00","09:15","10:00","11:00","14:00","14:45","15:15","15:45","16:15","18:00","19:15","19:45","20:00","20:15","21:00","22:00"],
-      note: "Winter baseline shown — open the summer sheet for exact Jul–Aug times.",
+      label: "Leg 1 · Palafrugell ⇄ Girona bus station · Moventis E3 via Palamós / Platja d'Aro / UdG (~1h25). There is NO direct airport coach — change at Girona for the 607 (see below).",
+      mins: 85,   // Palafrugell 06:15 → Girona bus station 07:40 on the E3 sheet
+      toDest: ["06:15","07:15","07:30","08:15","10:15","11:15","13:15","14:15","15:15","16:15","17:15","18:15"],
+      toPal:  ["08:00","09:00","09:15","10:00","12:00","13:00","15:00","16:00","17:00","18:00","19:00","20:00"],
+      note: "Mon–Fri (working days). Sat, Sun & holidays: Palafrugell → Girona 08:15, 09:15, 12:15, 16:15, 18:15, 20:15; Girona → Palafrugell 10:00, 11:00, 14:00, 18:00, 20:00, 22:00.",
       src: "https://www.moventis.es/sites/moventis/files/line/files/e3_girona-costa_brava_092026-062027.pdf"
     },
     gro_air: {
-      label: "Leg 2 · Girona city bus/train station ⇄ Girona Airport · Sagalés line 607 (~25–30 min, €2.80). Roughly hourly, ~05:00 to ~00:00 daily, and timed to Ryanair arrivals/departures. Girona's bus & train stations share one building, so it also connects to trains.",
-      mins: 28,   // Sagalés 607 ~25–30 min
-      toDest: ["05:00","06:00","07:00","08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00","21:00","22:00","23:00"],
-      toPal:  ["05:30","06:30","07:30","08:30","09:30","10:30","11:30","12:30","13:30","14:30","15:30","16:30","17:30","18:30","19:30","20:30","21:30","22:30","23:30","00:30"],
-      note: "Hourly baseline (≈ top of each hour) — exact 607 departures track the day's Ryanair schedule, so confirm on the live link. → row = towards the Airport; return row = towards Girona station.",
+      label: "Leg 2 · Girona bus/train station ⇄ Girona Airport · Sagalés line 607 (~30 min). Girona's bus & train stations share one building, so it also connects to trains.",
+      mins: 30,   // station 04:00 → airport 04:30 on the winter sheet
+      toDest: ["04:00","05:00","06:00","08:45","10:00","11:00","12:30","13:00","14:00","15:30","16:00","17:00","19:00","21:00","22:00","23:00","00:00"],
+      toPal:  ["04:30","05:30","06:30","09:30","10:30","12:00","12:30","13:30","15:45","16:30","17:30","18:45","19:30","21:30","22:30","23:30","00:30"],
+      note: "Winter sheet 1 Nov 2026 – 31 Mar 2027, Mon–Fri. Weekends/holidays are the same except no 12:30 from the station. → row = station → Airport; return row = Airport → Girona station.",
       src: "https://www.sagales.com/en/linia/607"
     },
     bcn: {
-      label: "Palafrugell ⇄ Barcelona Airport (T2/T1) · line 1 direct coach (~2h45). Airport-bound services shown.",
-      mins: 140,   // Moventis line 1 direct coach ~2h15–2h20
-      toDest: ["06:15","09:35","10:35","13:30","15:30"],
-      toPal:  ["08:30","10:30","16:15","19:30","20:15"],
-      note: "Winter baseline sample — summer adds an early ~04:15 and later services to ~23:00/23:25. Open the line page for the exact current sheet.",
+      label: "Palafrugell ⇄ Barcelona Airport · Moventis line 1 direct coach via Barcelona Nord (~2h55 to T1, T2 ~10 min later). Airport services only shown.",
+      mins: 180,   // Palafrugell 06:10 → T1 09:05 / T2 09:15; T2 12:00 → Palafrugell 15:05
+      toDest: ["06:10","07:55","09:30","10:30","13:35","15:40"],
+      toPal:  ["10:15","12:00","14:00","16:30","18:00","19:45"],
+      note: "Daily, 1 Nov 2026 – 2 Jan 2027. → row = Palafrugell bus station → Airport (T1 then T2). Return row = departures from T2 (T1 +10 min). 12:00 and 18:25 from Palafrugell only go to Barcelona Nord. A new sheet is due from 3 Jan 2027.",
       src: "https://www.moventis.es/es/lineas-horarios/linea-autobus-1-aeroport-bcn-barcelona-costa-brava-centre"
     }
   },
-
   // UK TRAIN TIMES — real Mon–Fri timetable (licensed RSP / Rail Delivery Group data,
   // captured Aug 2026 via live-departures.info). Summer 2026 working timetable, valid to Sat 12 Dec 2026.
   trainTimes: {
@@ -566,27 +576,26 @@ const DATA = {
   // DATA SOURCE REGISTRY — validity/expiry of each static timetable (drives the Admin panel).
   // validTo = last day the printed timetable is valid (YYYY-MM-DD), or null for ongoing/frequency services.
   sources: [
-    {id:"flyer",   label:"Bristol Airport Flyer (A1)", validFrom:"2026-09-05", validTo:null,
-      src:"https://flyer.bristolairport.co.uk/timetables", note:"24/7 turn-up-and-go. Frequency verified 5 Sep 2026 (Bristol Airport): ~8 min 07:00–19:00, ~30 min 19:00–07:00. No seasonal expiry — re-confirm the two headway bands occasionally."},
-    {id:"bus_gro", label:"Moventis 5/41/42 · Palafrugell ⇄ Girona", validFrom:"2026-09-01", validTo:"2027-06-30",
+    {id:"flyer",   label:"Bristol Airport Flyer (A1)", validFrom:"2025-04-06", validTo:null,
+      src:"https://flyer.bristolairport.co.uk/timetables", note:"24/7. Published timetable (valid from 6 Apr 2025, until further notice) re-checked 17 Nov 2026: Airport → city every 7–8 min 07:00–18:00, 10–15 min early morning & 18:00–20:00, ~20 min 20:00–00:00, ~30 min overnight."},
+    {id:"bus_gro", label:"Moventis E3 · Palafrugell ⇄ Girona", validFrom:"2026-09-01", validTo:"2027-06-30",
       src:"https://www.moventis.es/sites/moventis/files/line/files/e3_girona-costa_brava_092026-062027.pdf",
-      note:"Current summer sheet (Jul–Aug 2026); winter sheet is Sep–Jun. Times below are the winter baseline — see PDF for exact summer departures", unconfirmed:true},
-    {id:"bus_gro_air", label:"Sagalés 607 · Girona station ⇄ Girona Airport", validFrom:"2026-08-14", validTo:null,
+      note:"Winter sheet 1 Sep 2026 – 30 Jun 2027, read 17 Nov 2026: Mon–Fri both directions + weekend/holiday times."},
+    {id:"bus_gro_air", label:"Sagalés 607 · Girona station ⇄ Girona Airport", validFrom:"2026-11-01", validTo:"2027-03-31",
       src:"https://www.sagales.com/en/linia/607",
-      note:"Airport shuttle for the Girona routing (no direct airport↔Palafrugell coach). ~Hourly 05:00–00:00, timed to Ryanair; stored as an hourly baseline — exact minutes track flights, confirm on the link", unconfirmed:true},
-    {id:"bus_bcn", label:"Moventis line 1 · Palafrugell ⇄ Barcelona airport", validFrom:"2026-06-01", validTo:"2026-08-31",
+      note:"Winter sheet 1 Nov 2026 – 31 Mar 2027, read 17 Nov 2026 (Mon–Fri shown)."},
+    {id:"bus_bcn", label:"Moventis line 1 · Palafrugell ⇄ Barcelona airport", validFrom:"2026-11-01", validTo:"2027-01-02",
       src:"https://www.moventis.es/es/lineas-horarios/linea-autobus-1-aeroport-bcn-barcelona-costa-brava-centre",
-      note:"Current summer season; exact departures per the line page PDF", unconfirmed:true},
-    {id:"fl_gro",  label:"Ryanair Girona ↔ Bristol / Birmingham (summer)", validFrom:"2026-04-04", validTo:"2026-10-24",
-      src:"https://corporate.ryanair.com/news/ryanair-launches-summer-2026-schedule-at-bristol/", note:"Summer-only season"},
-    {id:"fl_bcn",  label:"Barcelona ↔ Bristol / Birmingham flights", validFrom:"2026-08-14", validTo:"2026-10-24",
-      src:"https://www.flightsfrom.com/BCN-BHX", note:"BCN⇄BHX Jet2/Vueling/easyJet/Ryanair times pulled from FlightsFrom (summer wk of 14 Aug); times shift day-to-day so shown as approx — winter schedule from late Oct", unconfirmed:true},
+      note:"Sheet 1 Nov 2026 – 2 Jan 2027 (PDF 1_bcn_costa_brava_122026), read 17 Nov 2026. Next sheet due from 3 Jan 2027."},
+    {id:"fl_gro",  label:"Ryanair / Jet2 Girona ↔ Bristol / Birmingham (summer only)", validFrom:"2027-03-28", validTo:"2027-10-30",
+      src:"https://www.flightsfrom.com/GRO-BRS", note:"No winter flights (confirmed 17 Nov 2026). Summer 2027 rows are provisional (summer-2026 pattern) — confirm by end Feb 2027.", unconfirmed:true},
+    {id:"fl_bcn",  label:"Barcelona ↔ Bristol / Birmingham flights (winter)", validFrom:"2026-10-25", validTo:"2027-03-27",
+      src:"https://www.flightsfrom.com/BCN-BHX", note:"Winter 2026/27 schedule from FlightsFrom week data (sampled 22 Nov – 14 Mar), checked 17 Nov 2026. Times vary by week, shown as approx. Summer 2027 needs loading before 28 Mar."},
     {id:"trains",  label:"UK rail · Bristol/Birmingham ↔ Cheltenham", validFrom:"2026-08-18", validTo:"2026-12-12",
-      src:"https://live-departures.info/rail/timetable/Cheltenham-Spa/Bristol-Temple-Meads/", note:"Real Mon–Fri timetable (licensed RSP/RDG data) captured Aug 2026 via live-departures. Valid until the 13 Dec 2026 UK timetable change."},
+      src:"https://live-departures.info/rail/timetable/Cheltenham-Spa/Bristol-Temple-Meads/", note:"Real Mon–Fri timetable (licensed RSP/RDG data), re-checked 17 Nov 2026 — still the current timetable. The Dec 2026 timetable (from Sun 13 Dec) wasn't published there yet: re-pull just before 13 Dec."},
     {id:"fx",      label:"EUR → GBP exchange rate", validFrom:null, validTo:null,
-      src:"", note:"Drifts continuously; refreshed weekly"}
+      src:"", note:"Drifts continuously; ~0.85 in mid-Nov 2026"}
   ],
-
   // numeric fares (one-way, per adult) for the cost estimator
   fareNum: {
     bus_pgl_gro:  { cur:"EUR", low:8,  high:12 },
@@ -855,9 +864,9 @@ function computeItinerary(side,key,dt,carrier,dep,arr,no){
       if(grp==='gro'){
         const atGirona=toMin(busDep)+70;                 // Moventis Palafrugell → Girona bus station
         legs.push(itLeg('🚌','Coach — Palafrugell → Girona bus station', busDep+' → ~'+fromMin(atGirona),
-          'Moventis (Sarfa) 5/41/42 via the coast (~1h–1h40).', {label:'bus times',href:DATA.busTimes.gro.src}));
+          'Moventis E3 via the coast (~1h25).', {label:'bus times',href:DATA.busTimes.gro.src}));
         legs.push(itLeg('🚌','Sagalés 607 — Girona bus station → Airport', '~'+fromMin(atGirona+25)+' → ~'+fromMin(toMin(busDep)+j),
-          'Hourly & timed to Ryanair (~25 min). No direct airport coach, so leave time for the change.', {label:'607 times',href:DATA.busTimes.gro_air.src}));
+          '~Hourly, ~30 min ride (winter sheet). No direct airport coach, so leave time for the change.', {label:'607 times',href:DATA.busTimes.gro_air.src}));
       } else {
         legs.push(itLeg('🚌','Coach — Palafrugell → Barcelona Airport (T2/T1)', busDep+' → ~'+fromMin(toMin(busDep)+j),
           'Moventis line 1 direct coach.', {label:'bus times',href:DATA.busTimes.bcn.src}));
@@ -887,14 +896,14 @@ function computeItinerary(side,key,dt,carrier,dep,arr,no){
       {label:'fares · '+niceDate(dt),href:datedFlightLink(carrier,oA,dA,dt)}));
     const ready=toMin(arr)+HOP[spA].deplane;
     if(grp==='gro'){
-      const atGirona=ready+60;                            // Sagalés 607 airport → Girona station (hourly, ~25 min ride + wait)
+      const atGirona=ready+60;                            // Sagalés 607 airport → Girona station (~hourly, ~30 min ride + wait)
       legs.push(itLeg('🚌','Sagalés 607 — Girona Airport → Girona bus station', '~'+fromMin(ready+5)+' → ~'+fromMin(atGirona),
-        'Hourly, timed to Ryanair arrivals (~25 min ride). No direct airport→Palafrugell coach, so change here.', {label:'607 times',href:DATA.busTimes.gro_air.src}));
+        '~Hourly, ~30 min ride (winter sheet). No direct airport→Palafrugell coach, so change here.', {label:'607 times',href:DATA.busTimes.gro_air.src}));
       const busDep=pickBusAfter('gro', atGirona);
       if(busDep){ const wait=toMin(busDep)-atGirona;
         if(wait>150) warn.push('Long wait ('+Math.round(wait/60*10)/10+'h) for the next Moventis coach in the stored baseline — the live summer sheet likely has an earlier one; check the link.');
         legs.push(itLeg('🚌','Coach — Girona bus station → Palafrugell', busDep+' → ~'+fromMin(toMin(busDep)+70),
-          'Moventis (Sarfa) 5/41/42.', {label:'bus times',href:DATA.busTimes.gro.src})); }
+          'Moventis E3.', {label:'bus times',href:DATA.busTimes.gro.src})); }
       else warn.push('No listed Moventis coach after the 607 connection — check the last service or plan a taxi/overnight.');
     } else {
       const busDep=pickBusAfter(grp,ready);
@@ -1123,7 +1132,7 @@ function tlAssumptions(F, side, key){
   if(side==='home' && /bcn/.test(key) && DATA.busTimes.bcn){
     rows.push(['Onward coach','Fixed departures towards '+h.dest+': '+DATA.busTimes.bcn.toPal.join(', ')+'. Ride ~'+fmtDur(h.train)+'; last '+h.lastDep+'. You take the <b>first coach after you’re ready</b>; a wait over ~1h30 is flagged amber.']);
   } else if(side==='home'){
-    rows.push(['Onward coach','Two legs (line 607 airport→Girona station, then 5/41/42 to '+h.dest+') — treated as an estimate (~'+fmtDur(h.train)+'); last ~'+h.lastDep+'.']);
+    rows.push(['Onward coach','Two legs (line 607 airport→Girona station, then Moventis E3 to '+h.dest+') — treated as an estimate (~'+fmtDur(h.train)+'); last ~'+h.lastDep+'.']);
   } else {
     rows.push(['Onward train','Trains ~every 30–60 min to '+h.dest+' (~'+fmtDur(h.train)+'); last '+h.lastDep+'. Margin to the last train: <b>≥45 min</b> = green, 15–45 = amber, under 15 = missed.']);
   }
@@ -1343,7 +1352,7 @@ function renderBusTimes(){
   host.innerHTML = `<details class="btwrap"><summary>🚌 Bus timetables — Palafrugell ⇄ Girona / Barcelona airport</summary>
     <div class="btseason">${B.season}</div>
     <div class="btcap">Each time is <b>departure → arrival</b> (arrival ≈ typical journey). <span class="sweetkey">green</span> = sweet spot: depart 08:00+, arrive 11:00–17:00 — no dawn starts.</div>
-    <div class="btnote" style="margin:2px 0 8px"><b>Girona airport = two legs.</b> Direct airport coaches are limited, so plan it as Palafrugell ⇄ Girona station (Moventis 5/41/42) + Girona station ⇄ airport (Sagalés 607).</div>
+    <div class="btnote" style="margin:2px 0 8px"><b>Girona airport = two legs.</b> Direct airport coaches are limited, so plan it as Palafrugell ⇄ Girona station (Moventis E3) + Girona station ⇄ airport (Sagalés 607).</div>
     ${block(B.gro,'Girona station','Palafrugell')}
     ${block(B.gro_air,'Girona Airport','Girona station')}
     ${block(B.bcn,'Barcelona Airport','Palafrugell')}
@@ -1430,7 +1439,7 @@ function openFlyerInfo(){
       <button class="tlclose" onclick="closeTimeline()" aria-label="Close">×</button>
     </div>
     <div style="font-size:13.5px;color:#243;line-height:1.55">
-      <p>Runs <b>24 hours, 7 days a week</b>, turn-up-and-go — no fixed departure list, so you just take the next one. Frequency: <b>every ~8 min 07:00–19:00</b>, then <b>every ~30 min 19:00–07:00</b>.</p>
+      <p>Runs <b>24 hours, 7 days a week</b>, turn-up-and-go — no fixed departure list, so you just take the next one. Frequency (airport → city): <b>every 7–8 min 07:00–18:00</b>, every 10–15 min early morning and 18:00–20:00, <b>~20 min 20:00–midnight</b>, then <b>~30 min overnight</b>.</p>
       <p><b>Airport → Temple Meads</b> is ~${f.rideTM} min (${f.stopsTM.length} stops); it carries on to the city centre / Bus Station (~${f.rideCity} min). Fare ${f.fare}; a First ticket also covers onward First buses in the Bristol zone.</p>
       <div style="margin:8px 0 10px"><div class="btlabel">Stops · Airport → city (Temple Meads is stop ${f.stopsTM.length}):</div><div class="flystops">${stopChips(f.stopsCity)}</div></div>
       <p>The <b>“just landed” helper</b> takes your landing time plus how long customs &amp; bags took, then lists every Cheltenham train you could make in about the next hour, tagged by how:</p>
@@ -1456,7 +1465,7 @@ function renderFlyer(){
   const d=new Date(); const nowV=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
   host.innerHTML = `<details class="btwrap" open><summary>🚌 Bristol Airport Flyer (A1) — frequency &amp; “just landed” helper</summary>
     <div class="btblock">
-      <div class="btlabel"><b>How often it runs — the actual cutoffs, 7 days a week:</b></div>
+      <div class="btlabel"><b>How often it runs — published Mon–Fri cutoffs (weekends similar):</b></div>
       <table class="flyband"><thead><tr><th>Time of day</th><th>Frequency</th><th></th></tr></thead>
         <tbody>${bandRows}</tbody></table>
       <div class="flynote" style="color:#455">Runs <b>24 hours</b>, turn-up-and-go. <b>Airport → Temple Meads ~${f.rideTM} min</b> (${f.stopsTM.length} stops). <button type="button" class="flyinfo-btn" onclick="openFlyerInfo()">ℹ Stops &amp; detail</button></div>
@@ -1508,7 +1517,7 @@ function srcRefresh(s){
 }
 // plain-language description of the leg each data source powers (for the ? panel)
 const SRC_DESC = {
-  bus_gro:     "🚌 Coach — Palafrugell ⇄ Girona bus station (Moventis 5/41/42)",
+  bus_gro:     "🚌 Coach — Palafrugell ⇄ Girona bus station (Moventis E3)",
   bus_gro_air: "🚌 Bus — Girona station ⇄ Girona Airport (Sagalés line 607)",
   bus_bcn:     "🚌 Coach — Palafrugell ⇄ Barcelona Airport (Moventis line 1, direct)",
   fl_gro:      "✈️ Flights — Girona ↔ Bristol / Birmingham (Ryanair, summer)",
@@ -1559,8 +1568,8 @@ function renderInfoSources(){
 // (b) show each route's operating days, so a wrong one is spotted at a glance
 // instead of by trial-and-error. These are updated by the refresh task.
 const REFRESH_CADENCE = 'monthly';
-const LAST_VERIFIED   = '2026-09-05';   // last time a human/task re-verified sources; refresh task updates this
-const NEXT_VERIFIED   = '2026-10-02';   // next scheduled automated check
+const LAST_VERIFIED   = '2026-11-17';   // last time a human/task re-verified sources; refresh task updates this
+const NEXT_VERIFIED   = '2026-12-10';   // next scheduled automated check
 const DOWFULL = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 // which registry source backs each flight route (for expiry-aware warnings)
 const ROUTE_SRC = { gro_brs:'fl_gro', gro_bhx:'fl_gro', bcn_brs:'fl_bcn', bcn_bhx:'fl_bcn',
@@ -1586,7 +1595,7 @@ function validateData(){
         const where=(ROUTELABEL[key]||key)+' '+(dir==='su'?'out':'home')+' ['+(r.carrier||('#'+i))+']';
         if(!Array.isArray(r.days)||!r.days.length){ errors.push('No operating days set for '+where); return; }
         if(r.days.some(d=>!Number.isInteger(d)||d<0||d>6)) errors.push('Invalid weekday number in '+where+': ['+r.days+']');
-        r.days.forEach(d=>union.add(d));
+        if((!r.from||r.from<=today)&&(!r.to||r.to>=today)) r.days.forEach(d=>union.add(d));   // only rows in season today
         // days[] must match the human-readable daysText, when present (guards half-done edits)
         if(r.daysText){ const toks=parseDayTokens(r.daysText);
           const A=r.days.slice().sort((a,b)=>a-b).join(','); const B=(toks||[]).join(',');
@@ -1605,7 +1614,7 @@ function healthBlock(){
   const v=validateData();
   const dayRows=v.routes.filter(r=>r.dir==='su').map(r=>{
     const lab=ROUTELABEL[r.key]||r.key;
-    const days=r.days.length?daysList(r.days):'<b style="color:#c62828">NONE — no flight on any day</b>';
+    const days=r.days.length?daysList(r.days):'<span style="color:#8a5a00">none this season</span>';
     return '<tr><td style="padding:1px 10px 1px 0;white-space:nowrap">'+lab+'</td><td style="padding:1px 0">'+days+'</td></tr>';
   }).join('');
   let status;
@@ -1650,8 +1659,9 @@ function renderAdmin(){
 }
 
 // ---- version control (shown in the header + footer; also mirrored in CHANGELOG.md) ----
-const VERSION = "3.23";
+const VERSION = "3.24";
 const CHANGELOG = [
+  ["3.24","2026-11-17","Winter timetable refresh — every leg re-checked against current sources. <b>Girona ⇄ Bristol/Birmingham</b> are summer-only and have no flights Nov–Mar, so the planner no longer offers them in winter (provisional summer-2027 rows reappear from 28 Mar; to be confirmed by end Feb). <b>Barcelona ⇄ Bristol</b> and <b>Barcelona ⇄ Birmingham</b> now carry the real winter 2026/27 schedules (easyJet, Ryanair, Vueling, Jet2) in place of the expired summer rows — Jet2 BCN⇄BHX pauses 23 Nov → ~11 Feb. <b>Buses</b>: Moventis E3 Palafrugell⇄Girona confirmed (Sep 2026–Jun 2027) with correct return and weekend times; Sagalés 607 updated to its winter sheet (1 Nov–31 Mar); Moventis line 1 to Barcelona airport updated to the 1 Nov–2 Jan sheet (now 6 airport coaches a day each way). <b>A1 Flyer</b> frequency bands rebuilt from the published timetable (7–8 min daytime down to ~30 min overnight) with corrected stop names. <b>UK rail</b> still current; re-pull due just before the 13 Dec timetable change."],
   ["3.23","2026-09-05","Timetables now show <b>departure → arrival</b> for every service (arrival estimated from each route's typical journey time), and highlight the <b>sweet-spot</b> services in bold green: those departing 08:00 or later and arriving 11:00–17:00 — the civilised ones that line up with a midday/afternoon flight, no 06:15 dawn starts. Each direction surfaces its green picks up front, with the full dep→arr list behind the ‘all times’ toggle. Time chips and the source→destination labels were also given stronger, more legible colours."],
   ["3.22","2026-09-05","Bus & train timetables are far less cluttered: instead of 20+ time chips per direction, each now shows a plain-English pattern — e.g. ‘≈ hourly on the hour · 05:00–23:00’, ‘≈ hourly at :15 past’, or ‘≈ every ~25 min · 06:14–23:04’ — with the full clock-face list tucked behind a ‘all N times’ toggle. Source and destination are now shown as a bold ‘From → To’ label in an accent colour so each direction reads at a glance."],
   ["3.21","2026-09-05","The A1 ‘just landed’ helper now lists ALL the Cheltenham trains you could make within about an hour of landing, not just the earliest — each tagged by how you’d catch it: ‘bus’ (comfortable), ‘bus · tight’ (only if a bus turns up quickly), or ‘taxi’ (too tight for the bus but a ~22 min cab still makes it, e.g. a last train or overnight when buses thin to every 30 min). Gives the full menu of doable options at a glance."],

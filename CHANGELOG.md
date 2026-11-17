@@ -3,6 +3,24 @@
 All notable changes to the Palafrugell ↔ Cheltenham Spa journey planner.
 Versions are also shown in-app (header badge + footer "Version history").
 
+## [3.24] — 2026-11-17
+Winter timetable refresh — every leg re-checked against current sources.
+- Girona ⇄ Bristol/Birmingham are summer-only: no flights Nov–Mar, so the
+  planner no longer offers them in winter. Provisional summer-2027 rows (summer
+  2026 pattern) reappear from 28 Mar 2027 — confirm by end Feb 2027.
+- Barcelona ⇄ Bristol and Barcelona ⇄ Birmingham now carry the real winter
+  2026/27 schedules (easyJet, Ryanair, Vueling, Jet2) from FlightsFrom week data,
+  replacing the expired summer rows. Jet2 BCN⇄BHX pauses 23 Nov → ~11 Feb 2027.
+- Moventis E3 Palafrugell⇄Girona confirmed (sheet Sep 2026–Jun 2027): Mon–Fri
+  both directions corrected (~1h25) plus weekend/holiday times.
+- Sagalés 607 Girona⇄airport updated to the winter sheet (1 Nov 2026–31 Mar 2027).
+- Moventis line 1 Palafrugell⇄Barcelona airport updated to the 1 Nov 2026–2 Jan
+  2027 sheet: 6 airport coaches a day each way (~2h55 to T1).
+- A1 Flyer frequency bands rebuilt from the published timetable (7–8 min daytime
+  → ~30 min overnight); stop names corrected.
+- UK rail still current (valid to 12 Dec); re-pull due before the 13 Dec change.
+- Health panel's "flights shown" table is now season-aware.
+
 ## [3.23] — 2026-09-05
 - Timetables now show departure → arrival for every service (arrival estimated
   from each route's typical journey time), and highlight the sweet-spot services
